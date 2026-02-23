@@ -1,56 +1,171 @@
-
 import api from "../api/axios";
+import {
+  mockLoginResponse,
+  mockUser,
+  mockSignupResponse,
+  mockColleges,
+  mockPasswordChangeResponse,
+} from "../data/mockData";
 
-/*export const loginUser = (email_id, password) =>
-  api.post("/auth/login", { email_id, password });*/
+// ─────────────────────────────────────────────────────────
+//  Toggle this flag to switch between mock and real backend
+// ─────────────────────────────────────────────────────────
+const USE_MOCK = true;
 
-export const loginUser = (email_id, password) => {
-  // 🔥 Development Mode - Skip Backend
-  return Promise.resolve({
-    data: {
-      access_token: "dev-token",
-      name: "Sakshi",
-      email_id: email_id,
-      phone_no: "9876543210",
-      password:"123456",
-      emergency_contacts: []
+// Helper: simulate network delay so it feels realistic
+const delay = (ms = 600) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// ─────────────────────────────────────────────────────────
+//  LOGIN  (POST /auth/login)
+// ─────────────────────────────────────────────────────────
+export const loginUser = async (email_id, password) => {
+  if (USE_MOCK) {
+    await delay();
+
+    // Check if there's a registered user in localStorage
+    const savedUser = localStorage.getItem('mock_registered_user');
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      if (parsedUser.email_id === email_id && parsedUser.password === password) {
+        return {
+          data: {
+            ...mockLoginResponse,
+            user: { ...mockLoginResponse.user, ...parsedUser },
+          },
+        };
+      } else {
+        throw { response: { data: { detail: "Invalid email or password" } } };
+      }
     }
-  });
+
+    // Default mock login
+    return {
+      data: {
+        ...mockLoginResponse,
+        user: { ...mockLoginResponse.user, email_id },
+      },
+    };
+  }
+  return api.post("/auth/login", { email_id, password });
 };
 
+// ─────────────────────────────────────────────────────────
+//  SIGNUP  (POST /auth/signup)
+// ─────────────────────────────────────────────────────────
+export const signupUser = async (formData) => {
+  if (USE_MOCK) {
+    await delay();
+    // Persist registration info for mock session
+    localStorage.setItem('mock_registered_user', JSON.stringify({
+      name: formData.name,
+      email_id: formData.email_id,
+      password: formData.password,
+      college: "IMCC"
+    }));
 
+    return {
+      data: { ...mockSignupResponse, email: formData.email_id },
+    };
+  }
+  return api.post("/auth/signup", formData);
+};
 
+// ─────────────────────────────────────────────────────────
+//  VERIFY SIGNUP OTP  (POST /auth/verify-otp)
+// ─────────────────────────────────────────────────────────
+export const verifySignupOtp = async (email, otp, otpToken) => {
+  if (USE_MOCK) {
+    await delay();
+    return { data: { message: "OTP verified successfully.", success: true } };
+  }
+  return api.post(
+    `/auth/verify-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}&otp_token=${encodeURIComponent(otpToken)}`
+  );
+};
 
+// ─────────────────────────────────────────────────────────
+//  FORGOT PASSWORD  (POST /auth/forgot-password)
+// ─────────────────────────────────────────────────────────
+export const forgotPassword = async (email) => {
+  if (USE_MOCK) {
+    await delay();
+    return {
+      data: {
+        message: `Password reset OTP sent to ${email}`,
+        otp_token: "mock-forgot-otp-token-xyz789",
+      },
+    };
+  }
+  return api.post(`/auth/forgot-password?email=${encodeURIComponent(email)}`);
+};
 
+// ─────────────────────────────────────────────────────────
+//  VERIFY FORGOT-PASSWORD OTP  (POST /auth/verify-forgot-otp)
+// ─────────────────────────────────────────────────────────
+export const verifyForgotOtp = async (email, otp, otpToken) => {
+  if (USE_MOCK) {
+    await delay();
+    return { data: { message: "OTP verified.", success: true } };
+  }
+  return api.post(
+    `/auth/verify-forgot-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}&otp_token=${encodeURIComponent(otpToken)}`
+  );
+};
 
-
-export const signupUser = (formData) =>
-  api.post("/auth/signup", formData);
-
-export const verifySignupOtp = (email, otp, otpToken) =>
-  api.post(`/auth/verify-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}&otp_token=${encodeURIComponent(otpToken)}`);
-
-export const forgotPassword = (email) =>
-  api.post(`/auth/forgot-password?email=${encodeURIComponent(email)}`);
-
-export const verifyForgotOtp = (email, otp, otpToken) =>
-  api.post(`/auth/verify-forgot-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}&otp_token=${encodeURIComponent(otpToken)}`);
-
-export const resetPassword = (formData) =>
-  api.post("/auth/reset-password", null, {
+// ─────────────────────────────────────────────────────────
+//  RESET PASSWORD  (POST /auth/reset-password)
+// ─────────────────────────────────────────────────────────
+export const resetPassword = async (formData) => {
+  if (USE_MOCK) {
+    await delay();
+    return { data: mockPasswordChangeResponse };
+  }
+  return api.post("/auth/reset-password", null, {
     params: {
       email: formData.email,
       otp: formData.otp,
       otp_token: formData.otp_token,
-      new_password: formData.new_password
-    }
+      new_password: formData.new_password,
+    },
   });
+};
 
-export const resendOtp = (email, purpose) =>
-  api.post(`/auth/resend-otp?email=${encodeURIComponent(email)}&purpose=${encodeURIComponent(purpose)}`);
+// ─────────────────────────────────────────────────────────
+//  RESEND OTP  (POST /auth/resend-otp)
+// ─────────────────────────────────────────────────────────
+export const resendOtp = async (email, purpose) => {
+  if (USE_MOCK) {
+    await delay();
+    return { data: { message: `OTP resent to ${email}`, success: true } };
+  }
+  return api.post(
+    `/auth/resend-otp?email=${encodeURIComponent(email)}&purpose=${encodeURIComponent(purpose)}`
+  );
+};
 
-export const getProfile = () =>
-  api.get("/auth/me");
+// ─────────────────────────────────────────────────────────
+//  GET PROFILE  (GET /auth/me)
+// ─────────────────────────────────────────────────────────
+export const getProfile = async () => {
+  if (USE_MOCK) {
+    await delay(400);
+    const savedUser = localStorage.getItem('mock_registered_user');
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      return { data: { ...mockUser, ...parsedUser } };
+    }
+    return { data: mockUser };
+  }
+  return api.get("/auth/me");
+};
 
-export const getColleges = () =>
-  api.get("/auth/colleges");
+// ─────────────────────────────────────────────────────────
+//  GET COLLEGES  (GET /auth/colleges)
+// ─────────────────────────────────────────────────────────
+export const getColleges = async () => {
+  if (USE_MOCK) {
+    await delay(300);
+    return { data: mockColleges };
+  }
+  return api.get("/auth/colleges");
+};

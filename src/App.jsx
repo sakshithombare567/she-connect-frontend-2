@@ -6,29 +6,21 @@ import ProtectedRoute from './routes/ProtectedRoute';
 
 // Pages
 import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
+import Requests from './pages/Requests';
 import StartTrip from './pages/StartTrip';
 import Blog from './pages/Blog';
 import Settings from './pages/Settings';
-import MatchMaking from './pages/MatchMaking';
+import Profile from './pages/Profile';
+import LiveConnection from './pages/LiveConnection';
 
 import ConnectedPersonal from './components/ConnectedPersonal';
 import ConnectedAnonymous from "./components/ConnectedAnonymous";
-
+import MapLibreMap from "./components/MapLibre";
 
 function App() {
   useEffect(() => {
-    const checkBackendHealth = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/`);
-        const data = await response.json();
-        console.log("Backend Health Check:", data);
-      } catch (error) {
-        console.error("Backend Connection Failed:", error);
-      }
-    };
-
-    checkBackendHealth();
+    // Backend health check removed as it was causing JSON parsing errors
   }, []);
 
   return (
@@ -40,10 +32,26 @@ function App() {
 
           {/* Protected Routes */}
           <Route
-            path="/dashboard"
+            path="/home"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/requests"
+            element={
+              <ProtectedRoute>
+                <Requests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />
@@ -72,10 +80,10 @@ function App() {
             }
           />
           <Route
-            path="/match-making"
+            path="/live-connection"
             element={
               <ProtectedRoute>
-                <MatchMaking />
+                <LiveConnection />
               </ProtectedRoute>
             }
           />
@@ -87,14 +95,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route 
-            path="/connected-anonymous" 
+          <Route
+            path="/connected-anonymous"
             element={
-            <ConnectedAnonymous />
-            } 
+              <ConnectedAnonymous />
+            }
           />
 
-          
+
         </Routes>
       </Router>
     </AuthProvider>

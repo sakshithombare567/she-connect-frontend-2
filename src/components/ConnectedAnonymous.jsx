@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
-import MapView from "../components/MapView";
+import MapLibreMap from "./MapLibre";
 import { getCoordsFromLocation } from "../utils/getCoordsFromLocation";
 
 const ConnectedAnonymous = () => {
@@ -72,7 +72,7 @@ const ConnectedAnonymous = () => {
           {loading ? (
             <p>Loading Map...</p>
           ) : (
-            <MapView startCoords={startCoords} endCoords={endCoords} />
+            <MapLibreMap startCoords={startCoords} endCoords={endCoords} />
           )}
         </div>
 

@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Login from './Login';
 import Signup from './Signup';
 import ForgotPassword from './ForgotPassword';
+import { useAuth } from '../../context/AuthContext';
 import { loginUser, signupUser, verifySignupOtp, forgotPassword, verifyForgotOtp, resetPassword } from "../../services/authService";
 
 const AuthModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [view, setView] = useState('login'); // login, signup_step1, signup_step2, signup_step3, signup_step4, forgot_email, forgot_otp, forgot_reset
 
     // Login & Common State
@@ -62,7 +64,7 @@ const AuthModal = ({ isOpen, onClose }) => {
             const { access_token, first_login } = response.data;
 
             if (access_token) {
-                localStorage.setItem("token", access_token);
+                await login(response.data);
                 setMessage({
                     type: "success",
                     text: "Login successful!"
@@ -70,7 +72,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
                 setTimeout(() => {
                     resetState();
-                    navigate("/dashboard");
+                    navigate("/home");
                 }, 1500);
             } else if (first_login) {
                 // If not verified, backend sends otp_token
@@ -162,19 +164,13 @@ const AuthModal = ({ isOpen, onClose }) => {
         try {
             await verifySignupOtp(email, otp, otpToken);
 
-            // After verification, login to get access token
-            const loginResponse = await loginUser(email, password);
-            const { access_token } = loginResponse.data;
-
-            if (access_token) {
-                localStorage.setItem("token", access_token);
-            }
-
-            setMessage({ type: 'success', text: "Account created successfully!" });
+            setMessage({ type: 'success', text: "Account created successfully! Please log in with your credentials." });
 
             setTimeout(() => {
-                resetState();
-                navigate("/dashboard");
+                setPassword(''); // Clear password to require manual entry
+                setConfirmPassword('');
+                setOtp('');
+                setView('login');
             }, 2000);
 
         } catch (error) {
@@ -247,9 +243,12 @@ const AuthModal = ({ isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={resetState}></div>
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md transition-opacity" aria-hidden="true" onClick={resetState}></div>
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full relative">
+                <div className="inline-block align-bottom bg-white rounded-[48px] text-left overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full relative border border-white">
+                    {/* Background Blobs */}
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-pink-100 rounded-full blur-[100px] opacity-40 -z-10"></div>
+                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-blue-100 rounded-full blur-[100px] opacity-40 -z-10"></div>
                     <div className="absolute top-0 right-0 pt-4 pr-4">
                         <button type="button" className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none" onClick={resetState}>
                             <span className="sr-only">Close</span>

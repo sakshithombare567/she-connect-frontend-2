@@ -1,27 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getProfile } from '../services/authService';
+import { mockUser } from '../data/mockData';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    /* temporary const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);*/
-   
-   const [user, setUser] = useState({
-    name: "Sakshi",
-    email_id: "sakshi@gmail.com",
-    phone_no: "9876543210",
-    password: "123456",   
-    emergency_contacts: [
-        {
-            emergency_name: "Mom",
-            phone_no: "9999999999",
-            gender: "Female"
-        }
-    ]
-});
-
-const [loading, setLoading] = useState(false);
+    // Using mock user — switch to null + fetchProfile() when backend is ready
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
 
 
@@ -49,14 +35,14 @@ const [loading, setLoading] = useState(false);
         }
     };
 
-    /*useEffect(() => {
+    useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
             fetchProfile();
         } else {
             setLoading(false);
         }
-    }, []);*/
+    }, []);
 
     const login = async (userData) => {
         try {
