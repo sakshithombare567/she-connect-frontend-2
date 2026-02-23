@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, MessageCircle, AlertTriangle } from "lucide-react";
 import MapLibreMap from "./MapLibre";
+import EmergencyModal from './EmergencyModal';
 import { getCoordsFromLocation } from "../utils/getCoordsFromLocation";
 
 const ConnectedPersonal = () => {
@@ -14,6 +15,7 @@ const ConnectedPersonal = () => {
   const [startCoords, setStartCoords] = useState(null);
   const [endCoords, setEndCoords] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showEmergency, setShowEmergency] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -86,11 +88,16 @@ const ConnectedPersonal = () => {
             Start Trip
           </button>
 
-          <button className="bg-red-600 text-white py-3 rounded-lg flex justify-center items-center">
+          <button
+            onClick={() => setShowEmergency(true)}
+            className="bg-red-600 text-white py-3 rounded-lg flex justify-center items-center"
+          >
             <AlertTriangle size={18} className="mr-2" />
             Emergency
           </button>
         </div>
+
+        <EmergencyModal isOpen={showEmergency} onClose={() => setShowEmergency(false)} />
 
       </div>
     </div>

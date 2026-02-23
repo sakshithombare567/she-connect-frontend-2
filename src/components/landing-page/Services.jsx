@@ -46,7 +46,7 @@ const Services = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-2">{service.title}</h3>
                             <p className="text-gray-500">{service.description}</p>
                             <button className="mt-auto pt-4 text-pink-600 font-medium hover:text-pink-800 transition-colors">
-                                Learn more &rarr;
+                                Learn more →
                             </button>
                         </div>
                     ))}

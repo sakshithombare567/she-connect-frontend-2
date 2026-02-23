@@ -17,6 +17,7 @@ import LiveConnection from './pages/LiveConnection';
 import ConnectedPersonal from './components/ConnectedPersonal';
 import ConnectedAnonymous from "./components/ConnectedAnonymous";
 import MapLibreMap from "./components/MapLibre";
+import EmergencyModal from './components/EmergencyModal';
 
 function App() {
   useEffect(() => {

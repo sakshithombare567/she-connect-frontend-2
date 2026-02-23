@@ -230,7 +230,7 @@ const MapLibreMap = ({ startCoords, endCoords }) => {
   }, [startCoords, endCoords]);
 
   return (
-    <div className="map-wrapper" style={{ position: "relative", width: "100%", height: "450px", marginTop: "1rem" }}>
+    <div className="map-wrapper" style={{ position: "relative", width: "100%", height: "450px", zIndex: 0  }}>
       <div
         ref={mapContainer}
         style={{
@@ -240,7 +240,8 @@ const MapLibreMap = ({ startCoords, endCoords }) => {
           overflow: "hidden",
           boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
           border: "1px solid rgba(0,0,0,0.05)",
-          animation: "fadeIn 0.8s ease-out"
+          animation: "fadeIn 0.8s ease-out",
+      
         }}
       />
       <style>{`
@@ -248,6 +249,7 @@ const MapLibreMap = ({ startCoords, endCoords }) => {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
+          
         .maplibregl-ctrl-group {
           border-radius: 12px !important;
           border: none !important;

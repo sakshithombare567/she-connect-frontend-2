@@ -15,6 +15,9 @@ import {
     Phone,
     AlertCircle
 } from 'lucide-react';
+import EmergencyModal from '../components/EmergencyModal';
+import ChatRoom from '../components/ChatRoom';
+import FeedbackModal from '../components/FeedbackModal';
 import { useAuth } from '../context/AuthContext';
 import { getCoordsFromLocation } from '../utils/getCoordsFromLocation';
 
@@ -32,6 +35,14 @@ const LiveConnection = () => {
     const [endCoords, setEndCoords] = useState(null);
     const [mapMode, setMapMode] = useState('starts'); // 'starts' or 'route'
     const [loading, setLoading] = useState(true);
+    const [showEmergency, setShowEmergency] = useState(false);
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [chatDisabled, setChatDisabled] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+
+    useEffect(() => {
+        console.debug('LiveConnection: showEmergency ->', showEmergency);
+    }, [showEmergency]);
 
     useEffect(() => {
         if (!partner || !userTrip) return;
@@ -140,7 +151,7 @@ const LiveConnection = () => {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 <span className="relative flex items-center gap-3">
-                                    {status === 'meeting' ? 'Processing...' : 'We Met'} <Play size={18} fill="currentColor" />
+                                    {status === 'meeting' ? 'Processing...' : 'Get Connected'} <Play size={18} fill="currentColor" />
                                 </span>
                             </button>
                         )}
@@ -158,7 +169,7 @@ const LiveConnection = () => {
                                         </span>
                                     </div>
                                 </div>
-                                <MapLibreMap startCoords={startCoords} endCoords={endCoords} />
+                                                                <MapLibreMap startCoords={startCoords} endCoords={endCoords} />
                             </div>
                         </div>
 
@@ -219,14 +230,23 @@ const LiveConnection = () => {
                                 </div>
 
                                 <div className="flex gap-3 mt-8">
-                                    <button className="flex-1 py-4 bg-pink-50 text-pink-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors">
+                                    <button onClick={() => setShowChat(true)} className="flex-1 py-4 bg-pink-50 text-pink-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors">
                                         <MessageCircle size={18} /> Chat
                                     </button>
-                                    <button className="p-4 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                                    <button
+                                        onClick={() => {
+                                            console.debug('LiveConnection: Emergency button clicked');
+                                            setShowEmergency(true);
+                                        }}
+                                        className="p-4 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                                    >
                                         <AlertCircle size={20} />
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Chat Card (toggle) */}
+                            {/* Chat now opens in a modal; remove inline rendering to avoid overlap */}
 
                             {/* Trip Summary Card */}
                             <div className="bg-gray-900 p-8 rounded-[40px] text-white relative overflow-hidden group">
@@ -255,7 +275,28 @@ const LiveConnection = () => {
                         </div>
                     </div>
                 </div>
-            </main>
+                                </main>
+
+                                <EmergencyModal isOpen={showEmergency} onClose={() => setShowEmergency(false)} />
+                                <FeedbackModal
+                                    isOpen={showFeedback}
+                                    onClose={() => setShowFeedback(false)}
+                                    onSubmit={(payload) => {
+                                        console.debug('Feedback submitted', payload);
+                                        // Mark chat disabled and optionally send payload to backend
+                                        setChatDisabled(true);
+                                        setShowFeedback(false);
+                                    }}
+                                />
+                                <ChatRoom
+                                    isModal={true}
+                                    isOpen={showChat}
+                                    onClose={() => setShowChat(false)}
+                                    roomId={partner?.id || 'room1'}
+                                    userName={user?.name || 'You'}
+                                    disabled={chatDisabled}
+                                    onEndTrip={() => setShowFeedback(true)}
+                                />
         </div>
     );
 };
