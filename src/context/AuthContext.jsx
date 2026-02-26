@@ -36,31 +36,36 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (token) {
             fetchProfile();
         } else {
+            console.log("[AuthContext] No token found in sessionStorage");
             setLoading(false);
         }
     }, []);
 
     const login = async (userData) => {
+        console.log("AuthContext: login function called with", userData);
         try {
-            // If userData contains token, save it and fetch profile
             if (userData.access_token) {
-                localStorage.setItem('token', userData.access_token);
+                console.log("AuthContext: token found, saving to sessionStorage");
+                sessionStorage.setItem('token', userData.access_token);
+                console.log("AuthContext: fetching profile...");
                 await fetchProfile();
+                console.log("AuthContext: fetchProfile finished");
             } else {
+                console.log("AuthContext: no token, setting user directly");
                 setUser(userData);
             }
         } catch (error) {
-            console.error("Login failed:", error);
+            console.error("AuthContext: Login failed:", error);
             throw error;
         }
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         setUser(null);
     };
 

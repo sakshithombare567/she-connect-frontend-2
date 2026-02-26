@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, GraduationCap, Mail, Phone, Lock, ChevronRight, ChevronLeft, ShieldCheck, Heart, Users } from 'lucide-react';
+import { User, GraduationCap, Mail, Phone, Lock, ChevronRight, ChevronLeft, ShieldCheck, Heart, Users, Eye, EyeOff } from 'lucide-react';
 import { getColleges } from '../../services/authService';
 
 const Signup = ({
@@ -29,8 +29,12 @@ const Signup = ({
     handleSignUpStep2,
     handleSignUpStep3,
     handleSignUpStep4,
-    handleBackToLogin
+    handleBackToLogin,
+    fieldErrors,
+    validateField
 }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     // College list state
     const [colleges, setColleges] = useState([]);
     const [collegesLoading, setCollegesLoading] = useState(false);
@@ -104,12 +108,14 @@ const Signup = ({
                                 <input
                                     type="text"
                                     required
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.fullName ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     placeholder="Enter your full name"
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
+                                    onBlur={(e) => validateField("fullName", e.target.value)}
                                 />
                             </div>
+                            {fieldErrors.fullName && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.fullName}</p>}
                         </div>
 
                         <div className="group">
@@ -118,9 +124,10 @@ const Signup = ({
                                 <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-600 transition-colors" size={18} />
                                 <select
                                     required
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 appearance-none"
+                                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 appearance-none ${fieldErrors.collegeName ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     value={collegeName}
                                     onChange={(e) => setCollegeName(e.target.value)}
+                                    onBlur={(e) => validateField("collegeName", e.target.value)}
                                     disabled={collegesLoading || collegesError}
                                 >
                                     <option key="default" value="">{collegesLoading ? "Loading..." : collegesError ? collegesError : "Select College"}</option>
@@ -129,6 +136,7 @@ const Signup = ({
                                     ))}
                                 </select>
                             </div>
+                            {fieldErrors.collegeName && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.collegeName}</p>}
                         </div>
 
                         <div className="group">
@@ -138,12 +146,14 @@ const Signup = ({
                                 <input
                                     type="email"
                                     required
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.email ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     placeholder="yourname@college.edu"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    onBlur={(e) => validateField("email", e.target.value)}
                                 />
                             </div>
+                            {fieldErrors.email && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.email}</p>}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -154,12 +164,14 @@ const Signup = ({
                                     <input
                                         type="tel"
                                         required
-                                        className="w-full pl-10 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-sm text-gray-900 placeholder:text-gray-300"
+                                        className={`w-full pl-10 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-sm text-gray-900 placeholder:text-gray-300 ${fieldErrors.phone ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                         placeholder="Number"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
+                                        onBlur={(e) => validateField("phone", e.target.value)}
                                     />
                                 </div>
+                                {fieldErrors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.phone}</p>}
                             </div>
                             <div className="group">
                                 <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Gender</label>
@@ -215,30 +227,39 @@ const Signup = ({
                                     type="text"
                                     placeholder="Full Name"
                                     required
-                                    className="w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                                    className={`w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.emergency1_name ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     value={emergency1.name}
                                     onChange={(e) => setEmergency1({ ...emergency1, name: e.target.value })}
+                                    onBlur={(e) => validateField("emergency1_name", e.target.value)}
                                 />
+                                {fieldErrors.emergency1_name && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency1_name}</p>}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <input
-                                        type="tel"
-                                        placeholder="Phone No"
-                                        required
-                                        className="w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
-                                        value={emergency1.phone}
-                                        onChange={(e) => setEmergency1({ ...emergency1, phone: e.target.value })}
-                                    />
-                                    <select
-                                        required
-                                        className="w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 appearance-none"
-                                        value={emergency1.gender}
-                                        onChange={(e) => setEmergency1({ ...emergency1, gender: e.target.value })}
-                                    >
-                                        <option key="e1-gender-default" value="">Gender</option>
-                                        <option key="e1-gender-female" value="Female">Female</option>
-                                        <option key="e1-gender-male" value="Male">Male</option>
-                                        <option key="e1-gender-other" value="Other">Other</option>
-                                    </select>
+                                    <div className="flex flex-col gap-1">
+                                        <input
+                                            type="tel"
+                                            placeholder="Phone No"
+                                            required
+                                            className={`w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.emergency1_phone ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
+                                            value={emergency1.phone}
+                                            onChange={(e) => setEmergency1({ ...emergency1, phone: e.target.value })}
+                                            onBlur={(e) => validateField("emergency1_phone", e.target.value)}
+                                        />
+                                        {fieldErrors.emergency1_phone && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency1_phone}</p>}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <select
+                                            required
+                                            className={`w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 appearance-none ${fieldErrors.emergency1_gender ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
+                                            value={emergency1.gender}
+                                            onChange={(e) => setEmergency1({ ...emergency1, gender: e.target.value })}
+                                        >
+                                            <option key="e1-gender-default" value="">Gender</option>
+                                            <option key="e1-gender-female" value="Female">Female</option>
+                                            <option key="e1-gender-male" value="Male">Male</option>
+                                            <option key="e1-gender-other" value="Other">Other</option>
+                                        </select>
+                                        {fieldErrors.emergency1_gender && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency1_gender}</p>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -256,32 +277,42 @@ const Signup = ({
                                     type="text"
                                     placeholder="Full Name"
                                     required
-                                    className="w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                                    className={`w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.emergency2_name ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     value={emergency2.name}
                                     onChange={(e) => setEmergency2({ ...emergency2, name: e.target.value })}
+                                    onBlur={(e) => validateField("emergency2_name", e.target.value)}
                                 />
+                                {fieldErrors.emergency2_name && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency2_name}</p>}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <input
-                                        type="tel"
-                                        placeholder="Phone No"
-                                        required
-                                        className="w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
-                                        value={emergency2.phone}
-                                        onChange={(e) => setEmergency2({ ...emergency2, phone: e.target.value })}
-                                    />
-                                    <select
-                                        required
-                                        className="w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 appearance-none"
-                                        value={emergency2.gender}
-                                        onChange={(e) => setEmergency2({ ...emergency2, gender: e.target.value })}
-                                    >
-                                        <option key="e2-gender-default" value="">Gender</option>
-                                        <option key="e2-gender-female" value="Female">Female</option>
-                                        <option key="e2-gender-male" value="Male">Male</option>
-                                        <option key="e2-gender-other" value="Other">Other</option>
-                                    </select>
+                                    <div className="flex flex-col gap-1">
+                                        <input
+                                            type="tel"
+                                            placeholder="Phone No"
+                                            required
+                                            className={`w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.emergency2_phone ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
+                                            value={emergency2.phone}
+                                            onChange={(e) => setEmergency2({ ...emergency2, phone: e.target.value })}
+                                            onBlur={(e) => validateField("emergency2_phone", e.target.value)}
+                                        />
+                                        {fieldErrors.emergency2_phone && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency2_phone}</p>}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <select
+                                            required
+                                            className={`w-full px-5 py-3.5 bg-white border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 appearance-none ${fieldErrors.emergency2_gender ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
+                                            value={emergency2.gender}
+                                            onChange={(e) => setEmergency2({ ...emergency2, gender: e.target.value })}
+                                        >
+                                            <option key="e2-gender-default" value="">Gender</option>
+                                            <option key="e2-gender-female" value="Female">Female</option>
+                                            <option key="e2-gender-male" value="Male">Male</option>
+                                            <option key="e2-gender-other" value="Other">Other</option>
+                                        </select>
+                                        {fieldErrors.emergency2_gender && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency2_gender}</p>}
+                                    </div>
                                 </div>
                             </div>
+                            {fieldErrors.contactMatch && <p className="text-center text-[11px] text-red-500 font-black uppercase tracking-widest mt-2 bg-red-50 py-2 rounded-xl border border-red-100 animate-pulse">{fieldErrors.contactMatch}</p>}
                         </div>
 
                         <div className="flex gap-4 pt-4 pb-2">
@@ -311,14 +342,23 @@ const Signup = ({
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-600 transition-colors" size={18} />
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                                    className={`w-full pl-12 pr-12 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.password ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     placeholder="********"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    onBlur={(e) => validateField("password", e.target.value)}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-600 transition-colors p-1"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
+                            {fieldErrors.password && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider text-left">{fieldErrors.password}</p>}
                         </div>
 
                         <div className="group">
@@ -326,14 +366,23 @@ const Signup = ({
                             <div className="relative">
                                 <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-600 transition-colors" size={18} />
                                 <input
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     required
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-pink-500 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                                    className={`w-full pl-12 pr-12 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 placeholder:text-gray-300 ${fieldErrors.confirmPassword ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     placeholder="********"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
+                                    onBlur={(e) => validateField("confirmPassword", e.target.value)}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-600 transition-colors p-1"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
+                            {fieldErrors.confirmPassword && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider text-left">{fieldErrors.confirmPassword}</p>}
                         </div>
 
                         <div className="flex gap-4 pt-4">

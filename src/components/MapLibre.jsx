@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const MapLibreMap = ({ startCoords, endCoords }) => {
+const MapLibreMap = ({ startCoords, endCoords, mode = 'route' }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const routeAnimationRef = useRef(null);
@@ -79,15 +79,17 @@ const MapLibreMap = ({ startCoords, endCoords }) => {
       const startLL = getLngLat(startCoords);
       const endLL = getLngLat(endCoords);
 
-      const createMarkerElement = (color) => {
+      const createMarkerElement = (color, label) => {
         const el = document.createElement("div");
         el.className = "custom-marker";
-        el.style.width = "30px";
-        el.style.height = "30px";
+        el.style.width = "40px";
+        el.style.height = "50px";
         el.style.display = "flex";
+        el.style.flexDirection = "column";
         el.style.alignItems = "center";
         el.style.justifyContent = "center";
         el.innerHTML = `
+          <div style="background: white; padding: 2px 8px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: -4px; position: relative; z-index: 1; border: 1px solid rgba(0,0,0,0.05); color: ${color}">${label}</div>
           <svg width="30" height="30" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
             <circle cx="12" cy="10" r="3" fill="white" />
@@ -97,16 +99,20 @@ const MapLibreMap = ({ startCoords, endCoords }) => {
       };
 
       if (startLL) {
-        const popup = new maplibregl.Popup({ offset: 25 }).setHTML('<strong>Start Location</strong>');
-        const marker = new maplibregl.Marker({ element: createMarkerElement("#ef4444"), anchor: 'bottom' })
+        const label = mode === 'starts' ? 'You' : 'Source';
+        const color = mode === 'starts' ? '#ec4899' : '#ef4444'; // Pink for You, Red for Source
+        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`<strong>${label}</strong>`);
+        const marker = new maplibregl.Marker({ element: createMarkerElement(color, label), anchor: 'bottom' })
           .setLngLat(startLL)
           .setPopup(popup)
           .addTo(mapInstance);
         markersRef.current.push(marker);
       }
       if (endLL) {
-        const popup = new maplibregl.Popup({ offset: 25 }).setHTML('<strong>Destination</strong>');
-        const marker = new maplibregl.Marker({ element: createMarkerElement("#3b82f6"), anchor: 'bottom' })
+        const label = mode === 'starts' ? 'Partner' : 'Destination';
+        const color = mode === 'starts' ? '#3b82f6' : '#2563eb'; // Blue for Partner/Dest
+        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`<strong>${label}</strong>`);
+        const marker = new maplibregl.Marker({ element: createMarkerElement(color, label), anchor: 'bottom' })
           .setLngLat(endLL)
           .setPopup(popup)
           .addTo(mapInstance);

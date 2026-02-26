@@ -106,7 +106,7 @@ export default LocationInput; */
 import React, { useState, useEffect, useRef } from "react";
 import { MapPin, Loader2, Search } from "lucide-react";
 
-const LocationInput = ({ label, value, onChange, placeholder }) => {
+const LocationInput = ({ label, value, onChange, placeholder, error }) => {
     const [suggestions, setSuggestions] = useState([]);
     const [history, setHistory] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -206,7 +206,7 @@ const LocationInput = ({ label, value, onChange, placeholder }) => {
                         if (value.length >= 1) setShowSuggestions(true);
                     }}
                     placeholder={placeholder}
-                    className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all shadow-sm hover:border-gray-400 bg-white/50 backdrop-blur-sm"
+                    className={`w-full pl-10 pr-10 py-2.5 border rounded-xl focus:ring-2 outline-none transition-all shadow-sm bg-white/50 backdrop-blur-sm ${error ? 'border-red-500 focus:ring-red-500/10' : 'border-gray-300 focus:ring-pink-500/20 focus:border-pink-500 hover:border-gray-400'}`}
                 />
                 <MapPin
                     className="absolute left-3 top-3 text-gray-400 group-focus-within:text-pink-500 transition-colors"

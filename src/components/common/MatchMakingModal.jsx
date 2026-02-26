@@ -5,6 +5,12 @@ import { mockPotentialMatches } from '../../data/mockData';
 const MatchMakingModal = ({ isOpen, onClose, tripDetails, privacyChoice, onConnect }) => {
     // Potential Matches
     const [potentialMatches] = useState(mockPotentialMatches);
+    const [sentRequestIds, setSentRequestIds] = useState([]);
+
+    const handleConnectClick = (user) => {
+        setSentRequestIds(prev => [...prev, user.id]);
+        if (onConnect) onConnect(user);
+    };
 
     // Filter matches where start AND end location match AND transport group matches
     const normalize = (str) => str?.trim().toLowerCase() || '';
@@ -98,17 +104,27 @@ const MatchMakingModal = ({ isOpen, onClose, tripDetails, privacyChoice, onConne
                                                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-                                                    {user.college || 'Verified Traveler'}
-                                                </p>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                                                        {user.college || 'Verified Traveler'}
+                                                    </p>
+                                                    <div className="flex items-center gap-1 text-[10px] text-pink-500 font-black uppercase tracking-widest">
+                                                        <MapPin size={10} />
+                                                        <span>Near {user.area || 'Unknown Area'}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <button
-                                            onClick={() => onConnect(user)}
-                                            className="px-6 py-3 rounded-xl bg-gray-900 text-white font-black text-xs uppercase tracking-widest hover:bg-pink-600 transition-all shadow-lg shadow-gray-200 hover:shadow-pink-100"
+                                            onClick={() => handleConnectClick(user)}
+                                            disabled={sentRequestIds.includes(user.id)}
+                                            className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg ${sentRequestIds.includes(user.id)
+                                                    ? 'bg-green-500 text-white cursor-default shadow-green-100'
+                                                    : 'bg-gray-900 text-white hover:bg-pink-600 shadow-gray-200 hover:shadow-pink-100'
+                                                }`}
                                         >
-                                            Connect
+                                            {sentRequestIds.includes(user.id) ? 'Request Sent' : 'Connect'}
                                         </button>
                                     </div>
                                 </div>

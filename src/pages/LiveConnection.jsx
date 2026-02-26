@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import MapLibreMap from '../components/MapLibre';
 import {
-    ArrowLeft,
     Menu,
     Shield,
     User as UserIcon,
@@ -13,47 +12,86 @@ import {
     Navigation2,
     MessageCircle,
     Phone,
-    AlertCircle
+    AlertCircle,
+    LogOut,
+    Truck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTrip, TRIP_STATUS } from '../context/TripContext';
 import { getCoordsFromLocation } from '../utils/getCoordsFromLocation';
 
 const LiveConnection = () => {
     const { user, loading: authLoading } = useAuth();
-    const location = useLocation();
     const navigate = useNavigate();
+    const {
+        tripStatus,
+        activeTrip,
+        connectedPartner,
+        privacyChoice,
+        endTrip,
+        emergencyAction,
+    } = useTrip();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    // State from navigation (partner, privacy, etc)
-    const { partner, privacyChoice, userTrip } = location.state || {};
-
     const [status, setStatus] = useState('coordinated'); // coordinated -> meeting -> connected
     const [startCoords, setStartCoords] = useState(null);
     const [endCoords, setEndCoords] = useState(null);
+    const [distance, setDistance] = useState(null);
     const [mapMode, setMapMode] = useState('starts'); // 'starts' or 'route'
     const [loading, setLoading] = useState(true);
 
+    // Redirect if not connected
     useEffect(() => {
-        if (!partner || !userTrip) return;
+        if (tripStatus !== TRIP_STATUS.CONNECTED || !connectedPartner) {
+            if (!authLoading) {
+                // Give a small delay for context to settle
+                const timer = setTimeout(() => {
+                    if (tripStatus !== TRIP_STATUS.CONNECTED) {
+                        navigate('/home', { replace: true });
+                    }
+                }, 500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [tripStatus, connectedPartner, authLoading, navigate]);
+
+    // Haversine distance calculation
+    const calculateDistance = (coords1, coords2) => {
+        if (!coords1 || !coords2) return null;
+        const R = 6371;
+        const dLat = (coords2[0] - coords1[0]) * Math.PI / 180;
+        const dLon = (coords2[1] - coords1[1]) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(coords1[0] * Math.PI / 180) * Math.cos(coords2[0] * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return (R * c).toFixed(2);
+    };
+
+    useEffect(() => {
+        if (!connectedPartner || !activeTrip) return;
 
         async function fetchCoordinates() {
             try {
-                // If coordinated, show both starting points
                 if (mapMode === 'starts') {
                     const [myStart, partnerStart] = await Promise.all([
-                        getCoordsFromLocation(userTrip.start),
-                        getCoordsFromLocation(partner.start)
+                        getCoordsFromLocation(activeTrip.start),
+                        getCoordsFromLocation(connectedPartner.start)
                     ]);
                     setStartCoords(myStart);
                     setEndCoords(partnerStart);
+                    if (myStart && partnerStart) {
+                        setDistance(calculateDistance(myStart, partnerStart));
+                    }
                 } else {
-                    // If connected, show route from start to end
                     const [routeStart, routeEnd] = await Promise.all([
-                        getCoordsFromLocation(userTrip.start),
-                        getCoordsFromLocation(userTrip.end)
+                        getCoordsFromLocation(activeTrip.start),
+                        getCoordsFromLocation(activeTrip.end)
                     ]);
                     setStartCoords(routeStart);
                     setEndCoords(routeEnd);
+                    setDistance(null);
                 }
             } catch (err) {
                 console.error("Error fetching coordinates:", err);
@@ -63,15 +101,19 @@ const LiveConnection = () => {
         }
 
         fetchCoordinates();
-    }, [partner, userTrip, mapMode]);
+    }, [connectedPartner, activeTrip, mapMode]);
 
     const handleMeet = () => {
         setStatus('meeting');
-        // Simulate meeting process...
         setTimeout(() => {
             setStatus('connected');
             setMapMode('route');
         }, 1500);
+    };
+
+    const handleEndTrip = () => {
+        endTrip();
+        navigate('/home');
     };
 
     if (authLoading || loading) {
@@ -82,7 +124,7 @@ const LiveConnection = () => {
         );
     }
 
-    if (!partner) {
+    if (!connectedPartner) {
         return (
             <div className="flex h-screen items-center justify-center bg-[#f8fafc] font-sans p-4">
                 <div className="bg-white p-8 rounded-[32px] shadow-2xl border border-gray-100 text-center max-w-sm">
@@ -115,7 +157,7 @@ const LiveConnection = () => {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-8 rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.03)] border border-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-pink-100 rounded-full blur-3xl -mr-16 -mt-16 opacity-30"></div>
 
-                        <div className="flex items-center gap-6 relative z-10">
+                        <div className="flex items-center gap-6 relative z-10 text-center md:text-left">
                             <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center shadow-inner transition-colors ${status === 'connected' ? 'bg-green-50 text-green-600' : 'bg-pink-50 text-pink-600'
                                 }`}>
                                 {status === 'connected' ? <CheckCircle2 size={36} /> : <Navigation2 size={36} className="animate-pulse" />}
@@ -127,23 +169,42 @@ const LiveConnection = () => {
                                 <p className="text-gray-400 font-medium text-sm mt-1">
                                     {status === 'connected'
                                         ? 'You are now traveling with your partner.'
-                                        : `Locate ${partner.name || 'your partner'} at the starting point.`}
+                                        : distance ? `Your partner is ${distance} km away. Meet at your start point.` : `Locate ${connectedPartner.name || 'your partner'} at the starting point.`}
                                 </p>
                             </div>
                         </div>
 
-                        {status !== 'connected' && (
-                            <button
-                                onClick={handleMeet}
-                                disabled={status === 'meeting'}
-                                className="px-10 py-5 bg-gray-900 text-white rounded-[24px] font-black text-sm uppercase tracking-widest shadow-2xl hover:shadow-pink-100 transition-all flex items-center gap-3 relative overflow-hidden group"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <span className="relative flex items-center gap-3">
-                                    {status === 'meeting' ? 'Processing...' : 'We Met'} <Play size={18} fill="currentColor" />
-                                </span>
-                            </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                            {status !== 'connected' ? (
+                                <button
+                                    onClick={handleMeet}
+                                    disabled={status === 'meeting'}
+                                    className="px-10 py-5 bg-gray-900 text-white rounded-[24px] font-black text-sm uppercase tracking-widest shadow-2xl hover:shadow-pink-100 transition-all flex items-center gap-3 relative overflow-hidden group w-full md:w-auto justify-center"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <span className="relative flex items-center gap-3">
+                                        {status === 'meeting' ? 'Processing...' : 'We Met'} <Play size={18} fill="currentColor" />
+                                    </span>
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={handleEndTrip}
+                                        className="px-8 py-5 bg-gray-900 text-white rounded-[24px] font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center gap-3"
+                                    >
+                                        <LogOut size={18} />
+                                        End Trip
+                                    </button>
+                                    <button
+                                        onClick={emergencyAction}
+                                        className="px-10 py-5 bg-rose-600 text-white rounded-[24px] font-black text-sm uppercase tracking-widest shadow-2xl hover:bg-rose-700 transition-all flex items-center gap-3"
+                                    >
+                                        <AlertCircle size={24} />
+                                        SOS
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -158,7 +219,7 @@ const LiveConnection = () => {
                                         </span>
                                     </div>
                                 </div>
-                                <MapLibreMap startCoords={startCoords} endCoords={endCoords} />
+                                <MapLibreMap startCoords={startCoords} endCoords={endCoords} mode={mapMode} />
                             </div>
                         </div>
 
@@ -173,16 +234,16 @@ const LiveConnection = () => {
 
                                 <div className="flex items-center gap-5 mb-8">
                                     <div className="w-20 h-20 rounded-3xl bg-gray-50 flex items-center justify-center text-pink-600 font-black text-3xl border border-gray-100 shadow-inner group-hover:bg-pink-50 transition-colors">
-                                        {privacyChoice === 'details' ? partner.name?.charAt(0) : '?'}
+                                        {connectedPartner.privacy_type === 'details' ? connectedPartner.name?.charAt(0) : '?'}
                                     </div>
                                     <div>
                                         <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                                            {privacyChoice === 'details' ? partner.name : `Anonymous ID: #${partner.id}`}
+                                            {connectedPartner.privacy_type === 'details' ? connectedPartner.name : `Anonymous ID: #${connectedPartner.id}`}
                                         </h4>
                                         <div className="flex items-center gap-2 mt-1">
-                                            {privacyChoice === 'details' ? (
+                                            {connectedPartner.privacy_type === 'details' ? (
                                                 <span className="text-xs bg-pink-100 text-pink-600 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-                                                    {partner.college || 'Verified'}
+                                                    {connectedPartner.college || 'Verified'}
                                                 </span>
                                             ) : (
                                                 <div className="flex items-center gap-1.5 text-xs text-gray-400 font-bold">
@@ -201,30 +262,58 @@ const LiveConnection = () => {
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-0.5">Starting Point</p>
-                                            <p className="text-sm font-bold text-gray-700">{partner.start}</p>
+                                            <p className="text-sm font-bold text-gray-700">{connectedPartner.start}</p>
                                         </div>
                                     </div>
 
-                                    {privacyChoice === 'details' && partner.phone && (
+                                    {connectedPartner.privacy_type === 'details' && connectedPartner.phone && (
                                         <div className="flex items-start gap-4">
                                             <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
                                                 <Phone size={20} />
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-0.5">Contact Number</p>
-                                                <p className="text-sm font-bold text-gray-700">{partner.phone}</p>
+                                                <p className="text-sm font-bold text-gray-700">{connectedPartner.phone}</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="flex gap-3 mt-8">
-                                    <button className="flex-1 py-4 bg-pink-50 text-pink-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors">
+                                    <button className="flex-1 py-4 bg-pink-50 text-pink-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors shadow-sm">
                                         <MessageCircle size={18} /> Chat
                                     </button>
-                                    <button className="p-4 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors">
-                                        <AlertCircle size={20} />
+                                    <button
+                                        onClick={emergencyAction}
+                                        className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-rose-700 transition-colors shadow-[0_10px_20px_-5px_rgba(225,29,72,0.3)]"
+                                    >
+                                        <AlertCircle size={18} /> Emergency
                                     </button>
+                                </div>
+                            </div>
+
+                            {/* My Sharing Status Card */}
+                            <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 border-dashed relative overflow-hidden group">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">My Visibility Status</p>
+                                        <div className="flex items-center gap-2">
+                                            {privacyChoice === 'details' ? (
+                                                <div className="flex items-center gap-1.5 text-xs font-black text-pink-600">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-600 animate-pulse"></div>
+                                                    Sharing Full Details
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 text-xs font-black text-blue-600">
+                                                    <Shield size={12} />
+                                                    Anonymous Mode Active
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                                        <Shield className={privacyChoice === 'details' ? 'text-pink-100' : 'text-blue-500'} size={20} />
+                                    </div>
                                 </div>
                             </div>
 
@@ -241,14 +330,14 @@ const LiveConnection = () => {
                                             <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                                         </div>
                                         <div className="flex flex-col justify-between py-0.5">
-                                            <div className="text-sm font-black tracking-tight">{userTrip.start}</div>
-                                            <div className="text-sm font-black tracking-tight">{userTrip.end}</div>
+                                            <div className="text-sm font-black tracking-tight">{activeTrip?.start}</div>
+                                            <div className="text-sm font-black tracking-tight">{activeTrip?.end}</div>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center justify-between pt-4 border-t border-white/10">
                                         <div className="text-xs font-bold text-white/40 uppercase tracking-widest">Transport</div>
-                                        <div className="text-xs font-black text-pink-400 uppercase tracking-widest">{userTrip.mode || 'Private Car'}</div>
+                                        <div className="text-xs font-black text-pink-400 uppercase tracking-widest capitalize">{activeTrip?.mode || 'Private Car'}</div>
                                     </div>
                                 </div>
                             </div>

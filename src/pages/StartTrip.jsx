@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Truck, Users, Menu } from 'lucide-react';
+import { MapPin, Truck, Users, Menu, AlertCircle, ArrowRight } from 'lucide-react';
 import LocationInput from '../components/LocationInput';
 import MapLibreMap from '../components/MapLibre';
 import Sidebar from '../components/Sidebar';
 import { getCoordsFromLocation } from '../utils/getCoordsFromLocation';
 import PrivacyModal from '../components/common/PrivacyModal';
-import MatchMakingModal from '../components/common/MatchMakingModal';
+import { useTrip, TRIP_STATUS } from '../context/TripContext';
 
 const StartTrip = () => {
     const navigate = useNavigate();
+    const {
+        tripStatus,
+        activeTrip,
+        createTrip,
+        hasActiveTrip,
+    } = useTrip();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [startLocation, setStartLocation] = useState('');
     const [endLocation, setEndLocation] = useState('');
@@ -19,14 +26,90 @@ const StartTrip = () => {
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const [transportMode, setTransportMode] = useState('');
     const [transportNo, setTransportNo] = useState('');
-
-    // MatchMaking Modal State
-    const [showMatchMakingModal, setShowMatchMakingModal] = useState(false);
-    const [privacyChoice, setPrivacyChoice] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
 
     // Track if coords were manually set from a suggestion to skip redundant geocoding
     const startFromSuggestion = useRef(false);
     const endFromSuggestion = useRef(false);
+
+    const validateField = (name, value) => {
+        let error = "";
+        switch (name) {
+            case 'startLocation':
+                if (!value || value.trim().length < 3) error = "Starting point is required (min 3 chars)";
+                break;
+            case 'endLocation':
+                if (!value || value.trim().length < 3) error = "Destination is required (min 3 chars)";
+                else if (value === startLocation) error = "Destination cannot be same as start";
+                break;
+            case 'transportMode':
+                if (!value) error = "Please select a transport mode";
+                break;
+            case 'transportNo':
+                // Vehicle number is optional — only validate if user enters something
+                if (value && value.trim().length > 0) {
+                    const cleanValue = value.replace(/\s+/g, '').toUpperCase();
+                    switch (transportMode) {
+                        case 'car':
+                        case 'uber':
+                        case 'ola':
+                        case 'auto':
+                        case 'cab':
+                            const rtoRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/;
+                            if (!rtoRegex.test(cleanValue)) {
+                                error = "Use format: MH 12 AB 1234 (10 chars)";
+                            }
+                            break;
+                        case 'train':
+                            const trainNoRegex = /^[0-9]{5}$/;
+                            const trainNameRegex = /^[A-Za-z\s]+$/;
+                            if (!trainNoRegex.test(value) && !trainNameRegex.test(value)) {
+                                error = "Enter 5-digit number or Train Name";
+                            }
+                            break;
+                        case 'metro':
+                            const metroRegex = /^[A-Za-z\s]+$/;
+                            if (!metroRegex.test(value)) {
+                                error = "Please enter Metro line/name (text only)";
+                            }
+                            break;
+                        default:
+                            if (value.trim().length < 3) error = "Enter valid ID (min 3 chars)";
+                            break;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        setFieldErrors(prev => ({ ...prev, [name]: error }));
+        return !error;
+    };
+
+    const getPlaceholder = () => {
+        switch (transportMode) {
+            case 'car':
+            case 'uber':
+            case 'ola':
+            case 'auto':
+            case 'cab':
+                return "e.g. MH 12 AB 1234 (optional)";
+            case 'train':
+                return "e.g. 12123 or Deccan Queen (optional)";
+            case 'metro':
+                return "e.g. Blue Line or Pink Line (optional)";
+            default:
+                return "Vehicle/ID number (optional)";
+        }
+    };
+
+    const validateForm = () => {
+        const e1 = validateField('startLocation', startLocation);
+        const e2 = validateField('endLocation', endLocation);
+        const e3 = validateField('transportMode', transportMode);
+        const e4 = validateField('transportNo', transportNo);
+        return e1 && e2 && e3 && e4;
+    };
 
     // Fetch start coordinates
     useEffect(() => {
@@ -35,13 +118,10 @@ const StartTrip = () => {
             startFromSuggestion.current = false;
             return;
         }
-
-        // If startLocation was set by suggestion click, don't re-geocode
         if (startFromSuggestion.current) {
             startFromSuggestion.current = false;
             return;
         }
-
         const timer = setTimeout(async () => {
             const coords = await getCoordsFromLocation(startLocation);
             if (coords) setStartCoords(coords);
@@ -56,13 +136,10 @@ const StartTrip = () => {
             endFromSuggestion.current = false;
             return;
         }
-
-        // If endLocation was set by suggestion click, don't re-geocode
         if (endFromSuggestion.current) {
             endFromSuggestion.current = false;
             return;
         }
-
         const timer = setTimeout(async () => {
             const coords = await getCoordsFromLocation(endLocation);
             if (coords) setEndCoords(coords);
@@ -71,30 +148,27 @@ const StartTrip = () => {
     }, [endLocation]);
 
     const handleSubmit = (e) => {
-        e.preventDefault();
-        setShowPrivacyModal(true);
+        if (e) e.preventDefault();
+        if (hasActiveTrip) return;
+        if (validateForm()) {
+            setShowPrivacyModal(true);
+        }
     };
 
     const handlePrivacyConfirm = (choice) => {
         setShowPrivacyModal(false);
-        setPrivacyChoice(choice);
-        setShowMatchMakingModal(true);
-    };
-
-    const handlePartnerSelect = (partner) => {
-        setShowMatchMakingModal(false);
-        navigate('/live-connection', {
-            state: {
-                partner: partner,
-                privacyChoice: privacyChoice,
-                userTrip: {
-                    start: startLocation,
-                    end: endLocation,
-                    mode: transportMode,
-                    transportNo: transportNo
-                }
-            }
-        });
+        const success = createTrip(
+            {
+                start: startLocation,
+                end: endLocation,
+                mode: transportMode,
+                vehicleNo: transportNo || null,
+            },
+            choice
+        );
+        if (success) {
+            navigate('/waiting-room');
+        }
     };
 
     return (
@@ -113,8 +187,38 @@ const StartTrip = () => {
                 </header>
 
                 <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
-                    {/* Map Section - Moved to Top with Premium Frame */}
-                    <div className="mb-8 relative group">
+                    {/* ── Active Trip Banner ── */}
+                    {hasActiveTrip && (
+                        <div className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-[28px] border border-amber-200 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                                        <AlertCircle size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-gray-900">You have an active trip</h3>
+                                        <p className="text-sm text-gray-500 font-medium">
+                                            {activeTrip?.start} → {activeTrip?.end} · <span className="capitalize">{activeTrip?.mode}</span>
+                                            {' · Status: '}<span className="text-amber-700 font-black text-xs uppercase">{tripStatus}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (tripStatus === TRIP_STATUS.CONNECTED) navigate('/live-connection');
+                                        else navigate('/waiting-room');
+                                    }}
+                                    className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-2"
+                                >
+                                    {tripStatus === TRIP_STATUS.CONNECTED ? 'View Connection' : 'Go to Waiting Room'}
+                                    <ArrowRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Map Section */}
+                    <div className={`mb-8 relative group ${hasActiveTrip ? 'opacity-50 pointer-events-none' : ''}`}>
                         <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-rose-500 rounded-[24px] blur opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
                         <div className="relative bg-white rounded-[24px] shadow-2xl overflow-hidden border border-white/20">
                             <div className="absolute top-4 left-4 z-10">
@@ -135,7 +239,7 @@ const StartTrip = () => {
                     </div>
 
                     {/* Form Section */}
-                    <div className="bg-white/70 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white p-8 md:p-10 relative overflow-hidden">
+                    <div className={`bg-white/70 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white p-8 md:p-10 relative overflow-hidden ${hasActiveTrip ? 'opacity-50 pointer-events-none' : ''}`}>
                         <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                                 <div>
@@ -158,6 +262,7 @@ const StartTrip = () => {
                                             value={startLocation}
                                             onChange={(val, coords) => {
                                                 setStartLocation(val);
+                                                validateField('startLocation', val);
                                                 if (coords) {
                                                     const isDifferent = !startCoords || startCoords[0] !== coords[0] || startCoords[1] !== coords[1];
                                                     if (isDifferent) {
@@ -167,7 +272,9 @@ const StartTrip = () => {
                                                 }
                                             }}
                                             placeholder="Where should we pick you up?"
+                                            error={fieldErrors.startLocation}
                                         />
+                                        {fieldErrors.startLocation && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.startLocation}</p>}
                                     </div>
                                     <div className="relative">
                                         <LocationInput
@@ -175,6 +282,7 @@ const StartTrip = () => {
                                             value={endLocation}
                                             onChange={(val, coords) => {
                                                 setEndLocation(val);
+                                                validateField('endLocation', val);
                                                 if (coords) {
                                                     const isDifferent = !endCoords || endCoords[0] !== coords[0] || endCoords[1] !== coords[1];
                                                     if (isDifferent) {
@@ -184,7 +292,9 @@ const StartTrip = () => {
                                                 }
                                             }}
                                             placeholder="Where are you heading?"
+                                            error={fieldErrors.endLocation}
                                         />
+                                        {fieldErrors.endLocation && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.endLocation}</p>}
                                     </div>
                                 </div>
 
@@ -197,8 +307,11 @@ const StartTrip = () => {
                                             <select
                                                 id="transportMode"
                                                 value={transportMode}
-                                                onChange={(e) => setTransportMode(e.target.value)}
-                                                className="w-full pl-5 pr-12 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none appearance-none transition-all hover:bg-white hover:border-gray-300"
+                                                onChange={(e) => {
+                                                    setTransportMode(e.target.value);
+                                                    validateField('transportMode', e.target.value);
+                                                }}
+                                                className={`w-full pl-5 pr-12 py-3.5 bg-gray-50/50 border rounded-2xl focus:ring-4 outline-none appearance-none transition-all hover:bg-white hover:border-gray-300 ${fieldErrors.transportMode ? 'border-red-500 focus:ring-red-500/10' : 'border-gray-200 focus:ring-pink-500/10 focus:border-pink-500'}`}
                                                 required
                                             >
                                                 <option value="">Choose your mode</option>
@@ -212,35 +325,50 @@ const StartTrip = () => {
                                             </select>
                                             <Truck className="absolute right-4 top-4 text-gray-400 group-focus-within:text-pink-600 transition-colors" size={20} />
                                         </div>
+                                        {fieldErrors.transportMode && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.transportMode}</p>}
                                     </div>
                                     <div className="space-y-1">
                                         <label htmlFor="transportNo" className="block text-sm font-bold text-gray-700 ml-1">
-                                            Travel ID / Vehicle No. <span className="text-gray-400 font-normal">(Optional)</span>
+                                            Travel ID / Vehicle No. <span className="text-gray-300 font-medium">(Optional)</span>
                                         </label>
                                         <input
                                             type="text"
                                             id="transportNo"
                                             value={transportNo}
-                                            onChange={(e) => setTransportNo(e.target.value)}
-                                            className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all hover:bg-white hover:border-gray-300"
-                                            placeholder="e.g. MH 12 AB 1234"
+                                            onChange={(e) => {
+                                                setTransportNo(e.target.value);
+                                                validateField('transportNo', e.target.value);
+                                            }}
+                                            className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-2xl focus:ring-4 outline-none transition-all hover:bg-white hover:border-gray-300 ${fieldErrors.transportNo ? 'border-red-500 focus:ring-red-500/10' : 'border-gray-200 focus:ring-pink-500/10 focus:border-pink-500'}`}
+                                            placeholder={getPlaceholder()}
                                         />
+                                        {fieldErrors.transportNo && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.transportNo}</p>}
                                     </div>
                                 </div>
 
                                 <div className="pt-6">
                                     <button
                                         type="submit"
-                                        className="w-full relative group overflow-hidden py-4 px-6 rounded-2xl bg-gray-900 transition-all duration-300 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)]"
+                                        disabled={hasActiveTrip}
+                                        className={`w-full relative group overflow-hidden py-4 px-6 rounded-2xl transition-all duration-300 ${hasActiveTrip
+                                                ? 'bg-gray-300 cursor-not-allowed'
+                                                : 'bg-gray-900 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)]'
+                                            }`}
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        {!hasActiveTrip && (
+                                            <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        )}
                                         <span className="relative flex items-center justify-center text-white font-bold text-lg">
                                             <Users className="mr-3" size={24} />
-                                            Find Travel Partners
+                                            {hasActiveTrip ? 'Active Trip Exists' : 'Broadcast Trip Request'}
                                         </span>
                                     </button>
-                                    <p className="text-center mt-4 text-xs text-gray-400 font-medium">
-                                        By continuing, you agree to our <span className="text-pink-500 underline">Safety Guidelines</span>
+                                    <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400 font-medium">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                        <span>Your exact coordinates are hidden until you connect with a partner.</span>
+                                    </div>
+                                    <p className="text-center mt-2 text-[10px] text-gray-300 uppercase tracking-widest font-bold">
+                                        Verified travel partners will see your path & general area only
                                     </p>
                                 </div>
                             </form>
@@ -258,18 +386,6 @@ const StartTrip = () => {
                 onClose={() => setShowPrivacyModal(false)}
                 onConfirm={handlePrivacyConfirm}
                 partnerName="Potential Matches"
-            />
-
-            <MatchMakingModal
-                isOpen={showMatchMakingModal}
-                onClose={() => setShowMatchMakingModal(false)}
-                tripDetails={{
-                    start: startLocation,
-                    end: endLocation,
-                    mode: transportMode
-                }}
-                privacyChoice={privacyChoice}
-                onConnect={handlePartnerSelect}
             />
         </div>
     );

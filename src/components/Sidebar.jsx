@@ -9,21 +9,25 @@ import {
     Settings,
     LogOut,
     MessageSquare,
-    X
+    X,
+    Hourglass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTrip, TRIP_STATUS } from '../context/TripContext';
 
 import { mockReceivedRequests } from '../data/mockData';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const { logout } = useAuth();
     const location = useLocation();
+    const { hasActiveTrip, tripStatus, receivedRequests } = useTrip();
 
-    const pendingRequestsCount = mockReceivedRequests.length;
+    const pendingRequestsCount = receivedRequests.filter(r => r.status === 'pending' || r.status === 'PENDING').length;
 
     const menuItems = [
         { path: '/home', icon: Home, label: 'Home' },
-        { path: '/start-trip', icon: MapPin, label: 'Start Trip' },
+        { path: '/start-trip', icon: MapPin, label: 'Start Trip', indicator: hasActiveTrip },
+        ...(hasActiveTrip ? [{ path: '/waiting-room', icon: Hourglass, label: 'Waiting Room', highlight: true }] : []),
         { path: '/blogs', icon: FileText, label: 'Blogs' },
         { path: '/requests', icon: UserPlus, label: 'Request', badge: pendingRequestsCount > 0 ? pendingRequestsCount : null },
         { path: '/profile', icon: User, label: 'Profile' },
@@ -67,14 +71,20 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     onClick={onClose}
                                     className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${isActive(item.path)
                                         ? 'bg-pink-600 text-white shadow-lg shadow-pink-200 translate-x-1'
-                                        : 'text-gray-500 hover:bg-pink-50 hover:text-pink-600'
+                                        : item.highlight ? 'text-pink-600 bg-pink-50 hover:bg-pink-100'
+                                            : 'text-gray-500 hover:bg-pink-50 hover:text-pink-600'
                                         }`}
                                 >
                                     <div className="flex items-center space-x-3.5">
-                                        <Icon
-                                            size={22}
-                                            className={`${isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-pink-500'} transition-colors`}
-                                        />
+                                        <div className="relative">
+                                            <Icon
+                                                size={22}
+                                                className={`${isActive(item.path) ? 'text-white' : item.highlight ? 'text-pink-600' : 'text-gray-400 group-hover:text-pink-500'} transition-colors`}
+                                            />
+                                            {item.indicator && !isActive(item.path) && (
+                                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                            )}
+                                        </div>
                                         <span className={`font-semibold ${isActive(item.path) ? 'text-white' : ''}`}>
                                             {item.label}
                                         </span>

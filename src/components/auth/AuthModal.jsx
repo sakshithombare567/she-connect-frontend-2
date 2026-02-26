@@ -29,6 +29,8 @@ const AuthModal = ({ isOpen, onClose }) => {
     const [emergency1, setEmergency1] = useState({ name: '', phone: '', gender: '' });
     const [emergency2, setEmergency2] = useState({ name: '', phone: '', gender: '' });
 
+    const [fieldErrors, setFieldErrors] = useState({}); // { email: 'Error message', ... }
+
     if (!isOpen) return null;
 
     const resetState = () => {
@@ -44,6 +46,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         setEmergency1({ name: '', phone: '', gender: '' });
         setEmergency2({ name: '', phone: '', gender: '' });
         setMessage({ type: '', text: '' });
+        setFieldErrors({});
         onClose();
     };
 
@@ -52,69 +55,200 @@ const AuthModal = ({ isOpen, onClose }) => {
         setMessage({ type: '', text: '' });
     };
 
+    // --- Validation Helpers ---
+    const validateEmail = (email) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
+    const validatePhone = (phone) => {
+        return /^[6-9]\d{9}$/.test(phone);
+    };
+
+    const validateName = (name) => {
+        return /^[a-zA-Z\s]{2,50}$/.test(name);
+    };
+
+    const validateField = (name, value) => {
+        let error = "";
+        switch (name) {
+            case "fullName":
+            case "emergency1_name":
+            case "emergency2_name":
+                if (!validateName(value)) error = "Use only letters (2-50 chars)";
+                break;
+            case "email":
+                if (!validateEmail(value)) error = "Invalid email format";
+                break;
+            case "phone":
+            case "emergency1_phone":
+            case "emergency2_phone":
+                if (!validatePhone(value)) error = "Must be 10 digits (starting 6-9)";
+                break;
+            case "password":
+                const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*\d).{8,10}$/;
+                if (!passwordRegex.test(value)) {
+                    error = "8-10 chars, 1 uppercase, 1 special, 1 number";
+                }
+                break;
+            case "confirmPassword":
+                if (value !== password) error = "Passwords do not match";
+                break;
+            default:
+                break;
+        }
+        setFieldErrors(prev => ({ ...prev, [name]: error }));
+        return error === "";
+    };
+
     // --- Login Handler ---
     const handleLogin = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+        console.log("Login sequence started...");
+
+        if (loading) {
+            console.warn("Login already in progress, skipping.");
+            return;
+        }
+
         setLoading(true);
+        setMessage({ type: '', text: '' });
 
         try {
-            const response = await loginUser(email, password);
+            console.log("Validating credentials:", { email, passwordLength: password?.length });
 
-            // Backend sends: { message: "...", access_token: "...", token_type: "...", first_login: ... }
+            if (!email || !password) {
+                setMessage({ type: 'error', text: "Please enter both email and password" });
+                setLoading(false);
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                setMessage({ type: 'error', text: "Please enter a valid college email format" });
+                setLoading(false);
+                return;
+            }
+
+            console.log("Calling loginUser service...");
+            const response = await loginUser(email, password);
+            console.log("Service response:", response);
+
+            if (!response || !response.data) {
+                throw new Error("No response from authentication service");
+            }
+
             const { access_token, first_login } = response.data;
 
             if (access_token) {
-                await login(response.data);
-                setMessage({
-                    type: "success",
-                    text: "Login successful!"
-                });
+                console.log("Login success! token found. Updating context...");
+
+                // Show success message immediately before context update to avoid perceived lag
+                setMessage({ type: "success", text: "Login successful! Redirecting..." });
+
+                try {
+                    await login(response.data);
+                    console.log("Context updated successfully");
+                } catch (loginError) {
+                    console.error("Error during context login:", loginError);
+                    // Continue anyway if it's just a profile fetch error in mock mode
+                }
 
                 setTimeout(() => {
-                    resetState();
+                    console.log("Redirecting to /home...");
                     navigate("/home");
-                }, 1500);
+                    // Delay resetState slightly to ensure navigation starts
+                    setTimeout(() => resetState(), 100);
+                }, 500); // Reduced delay for faster feedback
             } else if (first_login) {
-                // If not verified, backend sends otp_token
+                console.log("Verification required (first_login). Moving to OTP view.");
                 setOtpToken(response.data.otp_token);
-                setMessage({
-                    type: "success",
-                    text: "Email not verified. OTP sent."
-                });
+                setMessage({ type: "success", text: "Email not verified. OTP sent." });
                 setView('signup_step4');
+            } else {
+                console.error("Unknown response structure:", response.data);
+                setMessage({ type: "error", text: "Server returned an unexpected response" });
             }
 
         } catch (error) {
+            console.error("Login catch block triggered:", error);
             setMessage({
                 type: "error",
-                text: error.response?.data?.detail || "Login failed"
+                text: error.response?.data?.detail || error.message || "Login failed"
             });
         } finally {
             setLoading(false);
+            console.log("Login sequence finished (loading=false).");
         }
     };
 
     // --- Sign Up Flow Handlers ---
     const handleSignUpStep1 = (e) => {
         e.preventDefault();
-        setView('signup_step2');
-        setMessage({ type: '', text: '' });
+
+        const isNameValid = validateField("fullName", fullName);
+        const isEmailValid = validateField("email", email);
+        const isPhoneValid = validateField("phone", phone);
+
+        if (!collegeName) {
+            setFieldErrors(prev => ({ ...prev, collegeName: "Please select your college" }));
+        } else {
+            setFieldErrors(prev => ({ ...prev, collegeName: "" }));
+        }
+
+        if (isNameValid && isEmailValid && isPhoneValid && collegeName) {
+            setView('signup_step2');
+            setMessage({ type: '', text: '' });
+        }
     };
 
     const handleSignUpStep2 = (e) => {
         e.preventDefault();
-        setView('signup_step3');
-        setMessage({ type: '', text: '' });
+
+        const v1_name = validateField("emergency1_name", emergency1.name);
+        const v1_phone = validateField("emergency1_phone", emergency1.phone);
+        const v2_name = validateField("emergency2_name", emergency2.name);
+        const v2_phone = validateField("emergency2_phone", emergency2.phone);
+
+        if (!emergency1.gender) {
+            setFieldErrors(prev => ({ ...prev, emergency1_gender: "Select gender" }));
+        } else {
+            setFieldErrors(prev => ({ ...prev, emergency1_gender: "" }));
+        }
+
+        if (!emergency2.gender) {
+            setFieldErrors(prev => ({ ...prev, emergency2_gender: "Select gender" }));
+        } else {
+            setFieldErrors(prev => ({ ...prev, emergency2_gender: "" }));
+        }
+
+        // Duplicate/Self Checks
+        let contactMatchError = "";
+        if (emergency1.phone === emergency2.phone) {
+            contactMatchError = "Contacts must be different";
+        } else if (emergency1.phone === phone || emergency2.phone === phone) {
+            contactMatchError = "Cannot use own number";
+        }
+
+        setFieldErrors(prev => ({ ...prev, contactMatch: contactMatchError }));
+
+        if (v1_name && v1_phone && v2_name && v2_phone && emergency1.gender && emergency2.gender && !contactMatchError) {
+            setView('signup_step3');
+            setMessage({ type: '', text: '' });
+        }
     };
 
     const handleSignUpStep3 = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        if (password !== confirmPassword) {
-            setMessage({ type: 'error', text: "Passwords do not match!" });
-            return;
-        }
 
+        const isPassValid = validateField("password", password);
+        const isConfirmValid = validateField("confirmPassword", confirmPassword);
+
+        if (!isPassValid || !isConfirmValid) return;
+
+        setLoading(true);
         try {
             const payload = {
                 name: fullName,
@@ -160,6 +294,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
     const handleSignUpStep4 = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
         try {
             await verifySignupOtp(email, otp, otpToken);
@@ -170,6 +305,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                 setPassword(''); // Clear password to require manual entry
                 setConfirmPassword('');
                 setOtp('');
+                setLoading(false);
                 setView('login');
             }, 2000);
 
@@ -178,51 +314,72 @@ const AuthModal = ({ isOpen, onClose }) => {
                 type: "error",
                 text: error.response?.data?.detail || "Verification failed"
             });
+            setLoading(false);
         }
     };
 
     // --- Forgot Password Handlers ---
     const handleSendOtp = async (e) => {
         e.preventDefault();
+        console.log("Sending OTP to:", email);
+
+        if (!validateEmail(email)) {
+            setMessage({ type: 'error', text: "Please enter a valid email address" });
+            return;
+        }
+
+        setLoading(true);
         try {
             const response = await forgotPassword(email);
             setOtpToken(response.data.otp_token);
             setMessage({ type: 'success', text: response.data.message });
             setTimeout(() => {
                 setMessage({ type: '', text: '' });
+                setLoading(false);
                 setView('forgot_otp');
             }, 2000);
         } catch (error) {
+            console.error("Forgot password request failed:", error);
             setMessage({
                 type: "error",
-                text: error.response?.data?.detail || "Request failed"
+                text: error.response?.data?.detail || "Request failed. Check your connection."
             });
+            setLoading(false);
         }
     };
 
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
+        console.log("Verifying Forgot OTP...");
+        setLoading(true);
         try {
             await verifyForgotOtp(email, otp, otpToken);
-            setMessage({ type: 'success', text: 'OTP Verified!' });
+            setMessage({ type: 'success', text: 'OTP Verified! Please set your new password.' });
             setTimeout(() => {
                 setMessage({ type: '', text: '' });
+                setLoading(false);
                 setView('forgot_reset');
             }, 1000);
         } catch (error) {
+            console.error("Forgot OTP verification failed:", error);
             setMessage({
                 type: "error",
-                text: error.response?.data?.detail || "Invalid OTP"
+                text: error.response?.data?.detail || "Invalid OTP. Please check again."
             });
+            setLoading(false);
         }
     };
 
     const handleResetPassword = async (e) => {
-        e.preventDefault();
-        if (password !== confirmPassword) {
-            setMessage({ type: 'error', text: "Passwords do not match!" });
-            return;
-        }
+        if (e) e.preventDefault();
+        console.log("Reset password triggered");
+
+        const isPassValid = validateField("password", password);
+        const isConfirmValid = validateField("confirmPassword", confirmPassword);
+
+        if (!isPassValid || !isConfirmValid) return;
+
+        setLoading(true);
         try {
             await resetPassword({
                 email,
@@ -230,13 +387,18 @@ const AuthModal = ({ isOpen, onClose }) => {
                 otp_token: otpToken,
                 new_password: password
             });
-            setMessage({ type: 'success', text: "Password reset successfully!" });
-            setTimeout(() => handleBackToLogin(), 1500);
+            setMessage({ type: 'success', text: "Password reset successfully! Redirecting to login..." });
+            setTimeout(() => {
+                setLoading(false);
+                handleBackToLogin();
+            }, 1500);
         } catch (error) {
+            console.error("Reset password failed:", error);
             setMessage({
                 type: "error",
-                text: error.response?.data?.detail || "Reset failed"
+                text: error.response?.data?.detail || "Reset failed. Please try again."
             });
+            setLoading(false);
         }
     };
 
@@ -277,6 +439,8 @@ const AuthModal = ({ isOpen, onClose }) => {
                                         setView={setView}
                                         setMessage={setMessage}
                                         loading={loading}
+                                        fieldErrors={fieldErrors}
+                                        validateField={validateField}
                                     />
                                 )}
 
@@ -309,6 +473,8 @@ const AuthModal = ({ isOpen, onClose }) => {
                                         handleSignUpStep3={handleSignUpStep3}
                                         handleSignUpStep4={handleSignUpStep4}
                                         handleBackToLogin={handleBackToLogin}
+                                        fieldErrors={fieldErrors}
+                                        validateField={validateField}
                                     />
                                 )}
 
@@ -329,6 +495,9 @@ const AuthModal = ({ isOpen, onClose }) => {
                                         handleResetPassword={handleResetPassword}
                                         handleBackToLogin={handleBackToLogin}
                                         setMessage={setMessage}
+                                        fieldErrors={fieldErrors}
+                                        validateField={validateField}
+                                        loading={loading}
                                     />
                                 )}
                             </div>
