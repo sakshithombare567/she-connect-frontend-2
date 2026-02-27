@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import PrivacyModal from '../components/common/PrivacyModal';
 import {
     Menu,
     MapPin,
@@ -15,6 +16,13 @@ import {
     Loader2,
     CheckCircle2,
     Send,
+    Phone,
+    GraduationCap,
+    UserCheck,
+    Eye,
+    EyeOff,
+    Inbox,
+    X,
 } from 'lucide-react';
 import { useTrip, TRIP_STATUS } from '../context/TripContext';
 
@@ -26,17 +34,22 @@ const WaitingRoom = () => {
         activeTrip,
         matches,
         sentRequests,
-        privacyChoice,
+        receivedRequests,
         connectedPartner,
         sendRequest,
+        acceptRequest,
+        declineRequest,
         retryMatching,
         endTrip,
         emergencyAction,
         timeoutLimitMs,
     } = useTrip();
 
-    // Timer state
     const [elapsed, setElapsed] = useState(0);
+
+    // Privacy modal state
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState(null); // { type: 'send' | 'accept', id: ... }
 
     // Redirect if no active trip
     useEffect(() => {
@@ -45,14 +58,14 @@ const WaitingRoom = () => {
         }
     }, [tripStatus, navigate]);
 
-    // Redirect when connected
+    // Redirect when connected → Live Connection
     useEffect(() => {
         if (tripStatus === TRIP_STATUS.CONNECTED && connectedPartner) {
             navigate('/live-connection', { replace: true });
         }
     }, [tripStatus, connectedPartner, navigate]);
 
-    // Elapsed timer
+    // Timer
     useEffect(() => {
         if (tripStatus === TRIP_STATUS.WAITING || tripStatus === TRIP_STATUS.REQUEST_PENDING) {
             const interval = setInterval(() => {
@@ -79,6 +92,34 @@ const WaitingRoom = () => {
         return `${min}:${sec.toString().padStart(2, '0')}`;
     };
 
+    // ── Privacy Modal Handlers ──
+    const handleSendClick = (matchId) => {
+        setPendingAction({ type: 'send', id: matchId });
+        setShowPrivacyModal(true);
+    };
+
+    const handleAcceptClick = (requestId) => {
+        setPendingAction({ type: 'accept', id: requestId });
+        setShowPrivacyModal(true);
+    };
+
+    const handlePrivacyConfirm = (choice) => {
+        setShowPrivacyModal(false);
+        if (!pendingAction) return;
+
+        if (pendingAction.type === 'send') {
+            sendRequest(pendingAction.id, choice);
+        } else if (pendingAction.type === 'accept') {
+            acceptRequest(pendingAction.id, choice);
+        }
+        setPendingAction(null);
+    };
+
+    const handlePrivacyClose = () => {
+        setShowPrivacyModal(false);
+        setPendingAction(null);
+    };
+
     const remaining = Math.max(0, timeoutLimitMs - elapsed);
     const progress = Math.min(100, (elapsed / timeoutLimitMs) * 100);
 
@@ -97,41 +138,41 @@ const WaitingRoom = () => {
                     </button>
                 </header>
 
-                <div className="max-w-4xl mx-auto p-6 md:p-10 space-y-8">
+                <div className="max-w-4xl mx-auto p-6 md:p-10 space-y-6">
                     {/* ── Trip Details Banner ── */}
-                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-8 rounded-[40px] shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="space-y-4">
+                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 sm:p-8 rounded-[32px] shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full animate-pulse ${tripStatus === TRIP_STATUS.TIMEOUT ? 'bg-amber-500' : 'bg-green-500'}`}></div>
                                     <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${tripStatus === TRIP_STATUS.TIMEOUT ? 'text-amber-400' : 'text-green-400'}`}>
                                         {tripStatus === TRIP_STATUS.TIMEOUT ? 'Search Timed Out' : 'Searching for Partners'}
                                     </span>
                                 </div>
-                                <h3 className="text-2xl font-black text-white leading-tight">
-                                    {activeTrip?.start} <ArrowRight className="inline-block mx-2 text-pink-500" size={24} /> {activeTrip?.end}
+                                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                                    {activeTrip?.start} <ArrowRight className="inline-block mx-2 text-pink-500" size={20} /> {activeTrip?.end}
                                 </h3>
-                                <div className="flex items-center gap-6 text-sm text-gray-400 font-bold">
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 font-bold">
                                     <div className="flex items-center gap-2">
-                                        <Truck size={16} className="text-pink-500" />
+                                        <Truck size={14} className="text-pink-500" />
                                         <span className="capitalize">{activeTrip?.mode}</span>
                                     </div>
                                     {activeTrip?.vehicleNo && (
                                         <div className="flex items-center gap-2">
-                                            <Shield size={16} className="text-pink-500" />
+                                            <Shield size={14} className="text-pink-500" />
                                             <span>{activeTrip.vehicleNo}</span>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-2">
-                                        <Clock size={16} className="text-pink-500" />
+                                        <Clock size={14} className="text-pink-500" />
                                         <span>{new Date(activeTrip?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                 </div>
                             </div>
                             <button
                                 onClick={() => { endTrip(); navigate('/start-trip'); }}
-                                className="px-6 py-4 rounded-2xl bg-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10 backdrop-blur-md"
+                                className="px-5 py-3 rounded-2xl bg-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10 backdrop-blur-md"
                             >
                                 Cancel Trip
                             </button>
@@ -140,15 +181,15 @@ const WaitingRoom = () => {
 
                     {/* ── Timer Progress Bar ── */}
                     {(tripStatus === TRIP_STATUS.WAITING || tripStatus === TRIP_STATUS.REQUEST_PENDING) && (
-                        <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                    <Clock size={16} className="text-pink-600" />
-                                    <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Wait Time</span>
+                                    <Clock size={14} className="text-pink-600" />
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Wait Time</span>
                                 </div>
                                 <span className="text-sm font-black text-gray-900 tabular-nums">{formatTime(remaining)} remaining</span>
                             </div>
-                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                 <div
                                     className={`h-full rounded-full transition-all duration-1000 ease-linear ${progress > 80 ? 'bg-gradient-to-r from-amber-500 to-red-500' : 'bg-gradient-to-r from-pink-500 to-rose-500'}`}
                                     style={{ width: `${progress}%` }}
@@ -159,32 +200,21 @@ const WaitingRoom = () => {
 
                     {/* ── Timeout Overlay ── */}
                     {tripStatus === TRIP_STATUS.TIMEOUT && (
-                        <div className="bg-white p-10 rounded-[40px] shadow-lg border-2 border-amber-100 text-center space-y-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-50 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                            <div className="relative z-10">
-                                <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-50 rounded-full text-amber-600 mb-4">
-                                    <AlertTriangle size={36} />
-                                </div>
-                                <h3 className="text-2xl font-black text-gray-900">Search Timed Out</h3>
-                                <p className="text-gray-400 font-medium max-w-sm mx-auto mt-2">
-                                    We couldn't find a match in time. You can try again or trigger emergency assistance.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
-                                    <button
-                                        onClick={retryMatching}
-                                        className="px-8 py-4 rounded-2xl bg-gray-900 text-white font-black text-sm uppercase tracking-widest hover:shadow-2xl transition-all flex items-center justify-center gap-3 group"
-                                    >
-                                        <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
-                                        Check Again
-                                    </button>
-                                    <button
-                                        onClick={emergencyAction}
-                                        className="px-8 py-4 rounded-2xl bg-rose-600 text-white font-black text-sm uppercase tracking-widest hover:bg-rose-700 transition-all flex items-center justify-center gap-3 shadow-[0_10px_20px_-5px_rgba(225,29,72,0.3)]"
-                                    >
-                                        <AlertCircle size={18} />
-                                        Emergency
-                                    </button>
-                                </div>
+                        <div className="bg-white p-10 rounded-3xl shadow-lg border-2 border-amber-100 text-center space-y-6">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-50 rounded-full text-amber-600 mb-2">
+                                <AlertTriangle size={32} />
+                            </div>
+                            <h3 className="text-xl font-black text-gray-900">Search Timed Out</h3>
+                            <p className="text-gray-400 font-medium max-w-sm mx-auto text-sm">
+                                We couldn't find a match in time. You can try again or trigger emergency assistance.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                <button onClick={retryMatching} className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-black text-xs uppercase tracking-widest hover:shadow-2xl transition-all flex items-center justify-center gap-2 group">
+                                    <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" /> Check Again
+                                </button>
+                                <button onClick={emergencyAction} className="px-6 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all flex items-center justify-center gap-2">
+                                    <AlertCircle size={16} /> Emergency
+                                </button>
                             </div>
                         </div>
                     )}
@@ -194,81 +224,136 @@ const WaitingRoom = () => {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 {matches.length === 0 ? (
-                                    <Loader2 size={20} className="text-pink-600 animate-spin" />
+                                    <Loader2 size={18} className="text-pink-600 animate-spin" />
                                 ) : (
-                                    <CheckCircle2 size={20} className="text-green-600" />
+                                    <CheckCircle2 size={18} className="text-green-600" />
                                 )}
                                 <span className="text-sm font-black text-gray-900">
                                     {matches.length === 0
                                         ? 'Searching for travel partners on your route...'
-                                        : `${matches.length} verified ${matches.length === 1 ? 'partner' : 'partners'} found!`
-                                    }
+                                        : `${matches.length} ${matches.length === 1 ? 'partner' : 'partners'} found!`}
                                 </span>
                             </div>
-                            <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
+                            <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest hidden sm:block">
                                 {activeTrip?.start} → {activeTrip?.end}
                             </span>
                         </div>
                     )}
 
+                    {/* ── Incoming Requests ── */}
+                    {receivedRequests.length > 0 && (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Inbox size={16} className="text-green-600" />
+                                <span className="text-xs font-black text-green-700 uppercase tracking-widest">
+                                    Incoming Requests ({receivedRequests.length})
+                                </span>
+                            </div>
+                            {receivedRequests.map(req => (
+                                <div key={req.id} className="bg-green-50 p-5 rounded-2xl border border-green-200">
+                                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-green-700 font-black text-lg">
+                                                {req.fromName?.charAt(0) || '?'}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-base font-black text-gray-900">{req.fromName}</h4>
+                                                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-bold mt-1">
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin size={12} className="text-pink-500" />
+                                                        {req.tripStart} → {req.tripEnd}
+                                                    </span>
+                                                    {req.fromPrivacy === 'details' && req.fromPhone && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Phone size={12} className="text-blue-500" />
+                                                            {req.fromPhone}
+                                                        </span>
+                                                    )}
+                                                    {req.fromPrivacy === 'details' && req.fromCollege && (
+                                                        <span className="flex items-center gap-1">
+                                                            <GraduationCap size={12} className="text-purple-500" />
+                                                            {req.fromCollege}
+                                                        </span>
+                                                    )}
+                                                    {req.fromPrivacy === 'anonymous' && (
+                                                        <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                                                            <EyeOff size={10} /> Anonymous
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleAcceptClick(req.id)}
+                                                className="px-5 py-3 rounded-xl bg-green-600 text-white font-black text-xs uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2"
+                                            >
+                                                <UserCheck size={16} /> Accept
+                                            </button>
+                                            <button
+                                                onClick={() => declineRequest(req.id)}
+                                                className="px-4 py-3 rounded-xl bg-gray-100 text-gray-500 font-black text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-600 transition-all"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* ── Matches List ── */}
                     {(tripStatus === TRIP_STATUS.WAITING || tripStatus === TRIP_STATUS.REQUEST_PENDING) && matches.length > 0 && (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
+                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Matched Partners</span>
                             {matches.map(user => (
-                                <div key={user.id} className="bg-white p-8 rounded-[40px] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_50px_rgba(236,72,153,0.05)] transition-all group overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 w-40 h-40 bg-pink-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-16 h-16 rounded-3xl bg-gray-50 flex items-center justify-center text-pink-600 font-black text-2xl border border-gray-100 shadow-inner group-hover:bg-pink-50 transition-colors">
+                                <div key={user.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-pink-600 font-black text-xl border border-gray-100 group-hover:bg-pink-50 transition-colors">
                                                 {user.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h4 className="text-lg font-black text-gray-900 tracking-tight">{user.name}</h4>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="text-base font-black text-gray-900">{user.name}</h4>
                                                     {user.verified && <span className="w-2 h-2 rounded-full bg-green-500"></span>}
-                                                    <span className="text-[10px] bg-gray-100 text-gray-500 font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                                                        {user.college || 'Verified'}
-                                                    </span>
                                                 </div>
-                                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 font-bold">
-                                                    <div className="flex items-center gap-2 text-pink-600 bg-pink-50 px-3 py-1 rounded-lg border border-pink-100/50">
-                                                        <MapPin size={14} />
+                                                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 font-bold">
+                                                    <div className="flex items-center gap-1 text-pink-600 bg-pink-50 px-2 py-0.5 rounded-lg">
+                                                        <MapPin size={12} />
                                                         <span>{user.start} → {user.end}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Truck size={14} />
+                                                    <div className="flex items-center gap-1">
+                                                        <Truck size={12} />
                                                         <span className="capitalize">{user.mode}</span>
                                                     </div>
-                                                    {user.area && (
-                                                        <div className="flex items-center gap-1 text-[10px] text-pink-500 font-black uppercase tracking-widest">
-                                                            <MapPin size={10} />
-                                                            <span>Near {user.area}</span>
+                                                    {user.college && (
+                                                        <div className="flex items-center gap-1 text-purple-500">
+                                                            <GraduationCap size={12} /><span>{user.college}</span>
+                                                        </div>
+                                                    )}
+                                                    {user.phone && (
+                                                        <div className="flex items-center gap-1 text-blue-500">
+                                                            <Phone size={12} /><span>{user.phone}</span>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
-
                                         <button
-                                            onClick={() => sendRequest(user.id)}
+                                            onClick={() => handleSendClick(user.id)}
                                             disabled={isRequestSent(user.id)}
-                                            className={`px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all flex items-center gap-3 shrink-0 ${isRequestSent(user.id)
-                                                    ? getRequestStatus(user.id) === 'ACCEPTED'
-                                                        ? 'bg-green-500 text-white shadow-green-100 cursor-default'
-                                                        : 'bg-green-50 text-green-700 border border-green-200 cursor-default'
-                                                    : 'bg-gray-900 text-white hover:shadow-2xl hover:shadow-pink-100 bg-gradient-to-r hover:from-pink-600 hover:to-rose-600'
+                                            className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 ${isRequestSent(user.id)
+                                                ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
+                                                : 'bg-gray-900 text-white hover:shadow-lg bg-gradient-to-r hover:from-pink-600 hover:to-rose-600'
                                                 }`}
                                         >
-                                            {isRequestSent(user.id) ? (
-                                                getRequestStatus(user.id) === 'ACCEPTED' ? (
-                                                    <><CheckCircle2 size={18} /> Connected!</>
-                                                ) : (
-                                                    <><Send size={16} /> Request Sent</>
-                                                )
-                                            ) : (
-                                                <><Send size={16} /> Send Request</>
-                                            )}
+                                            {isRequestSent(user.id)
+                                                ? <><Send size={14} /> Sent ✓</>
+                                                : <><Send size={14} /> Send Request</>
+                                            }
                                         </button>
                                     </div>
                                 </div>
@@ -276,15 +361,15 @@ const WaitingRoom = () => {
                         </div>
                     )}
 
-                    {/* ── Empty State (searching, no matches yet) ── */}
-                    {(tripStatus === TRIP_STATUS.WAITING) && matches.length === 0 && (
-                        <div className="bg-white p-20 rounded-[40px] border border-dashed border-gray-200 text-center space-y-4">
-                            <div className="inline-flex items-center justify-center w-20 h-20 bg-pink-50 rounded-full text-pink-300 mb-2">
-                                <Users size={32} className="animate-pulse" />
+                    {/* ── Empty State ── */}
+                    {(tripStatus === TRIP_STATUS.WAITING) && matches.length === 0 && receivedRequests.length === 0 && (
+                        <div className="bg-white p-16 rounded-3xl border border-dashed border-gray-200 text-center space-y-4">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-50 rounded-full text-pink-300 mb-2">
+                                <Users size={28} className="animate-pulse" />
                             </div>
-                            <h3 className="text-xl font-black text-gray-900">Looking for Partners...</h3>
+                            <h3 className="text-lg font-black text-gray-900">Looking for Partners...</h3>
                             <p className="text-gray-400 font-medium max-w-xs mx-auto text-sm">
-                                We're searching for verified travelers on your route. Matches will appear here automatically.
+                                Open another browser tab, create the same trip, and both will discover each other automatically!
                             </p>
                             <div className="flex items-center justify-center gap-2 mt-4">
                                 <div className="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
@@ -295,6 +380,14 @@ const WaitingRoom = () => {
                     )}
                 </div>
             </main>
+
+            {/* ── Privacy Modal (for Send / Accept) ── */}
+            <PrivacyModal
+                isOpen={showPrivacyModal}
+                onClose={handlePrivacyClose}
+                onConfirm={handlePrivacyConfirm}
+                partnerName={pendingAction?.type === 'accept' ? 'Requester' : 'Partner'}
+            />
         </div>
     );
 };

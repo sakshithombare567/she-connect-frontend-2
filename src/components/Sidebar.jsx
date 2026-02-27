@@ -3,33 +3,24 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     Home,
     User,
-    UserPlus,
     MapPin,
     FileText,
     Settings,
     LogOut,
-    MessageSquare,
     X,
-    Hourglass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useTrip, TRIP_STATUS } from '../context/TripContext';
-
-import { mockReceivedRequests } from '../data/mockData';
+import { useTrip } from '../context/TripContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const { logout } = useAuth();
     const location = useLocation();
-    const { hasActiveTrip, tripStatus, receivedRequests } = useTrip();
-
-    const pendingRequestsCount = receivedRequests.filter(r => r.status === 'pending' || r.status === 'PENDING').length;
+    const { hasActiveTrip } = useTrip();
 
     const menuItems = [
         { path: '/home', icon: Home, label: 'Home' },
         { path: '/start-trip', icon: MapPin, label: 'Start Trip', indicator: hasActiveTrip },
-        ...(hasActiveTrip ? [{ path: '/waiting-room', icon: Hourglass, label: 'Waiting Room', highlight: true }] : []),
         { path: '/blogs', icon: FileText, label: 'Blogs' },
-        { path: '/requests', icon: UserPlus, label: 'Request', badge: pendingRequestsCount > 0 ? pendingRequestsCount : null },
         { path: '/profile', icon: User, label: 'Profile' },
         { path: '/settings', icon: Settings, label: 'Settings' },
     ];

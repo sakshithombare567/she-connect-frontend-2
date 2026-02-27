@@ -10,12 +10,12 @@ import {
     Menu,
     Compass,
     Star,
-    Clock
+    Clock,
+    Hourglass
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { mockReceivedRequests } from '../data/mockData';
 
 const Home = () => {
     const { user, loading } = useAuth();
@@ -47,16 +47,14 @@ const Home = () => {
             lightColor: "bg-blue-50"
         },
         {
-            title: "Connection Requests",
-            desc: "Manage incoming travel requests from other girls.",
-            icon: UserPlus,
-            path: "/requests",
+            title: "Waiting Room",
+            desc: "Find and connect with travel partners on your route.",
+            icon: Hourglass,
+            path: "/waiting-room",
             color: "bg-purple-600",
             lightColor: "bg-purple-50"
         }
     ];
-
-    const recentRequests = mockReceivedRequests.slice(0, 2);
 
     return (
         <div className="flex h-screen bg-[#f8fafc] font-sans text-gray-900">
@@ -112,46 +110,6 @@ const Home = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Recent Requests Section */}
-                    {recentRequests.length > 0 && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                                    Latest Requests <span className="text-pink-600 bg-pink-50 px-3 py-1 rounded-full text-xs font-black">{mockReceivedRequests.length}</span>
-                                </h3>
-                                <Link to="/requests" className="text-pink-600 font-bold text-sm hover:underline flex items-center gap-1 group">
-                                    View All <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {recentRequests.map((request) => (
-                                    <Link
-                                        key={request.id}
-                                        to="/requests"
-                                        className="bg-white p-6 rounded-[32px] border border-white shadow-[0_15px_40px_rgba(0,0,0,0.02)] hover:border-pink-100 transition-all flex items-center gap-5 group"
-                                    >
-                                        <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-pink-600 font-black text-xl border border-gray-100 group-hover:bg-pink-50 transition-colors">
-                                            {request.name.charAt(0)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-black text-gray-900 truncate">{request.name}</h4>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400 font-bold">
-                                                <span className="text-pink-600">{request.start} → {request.end}</span>
-                                                <div className="flex items-center gap-1">
-                                                    <Clock size={12} />
-                                                    <span>New</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="p-3 bg-pink-50 text-pink-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <ArrowRight size={18} />
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
                     {/* Quick Actions Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

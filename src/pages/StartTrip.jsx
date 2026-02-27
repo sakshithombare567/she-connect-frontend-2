@@ -7,9 +7,12 @@ import Sidebar from '../components/Sidebar';
 import { getCoordsFromLocation } from '../utils/getCoordsFromLocation';
 import PrivacyModal from '../components/common/PrivacyModal';
 import { useTrip, TRIP_STATUS } from '../context/TripContext';
+import { useAuth } from '../context/AuthContext';
+import { getSessionId } from '../utils/tripStorage';
 
 const StartTrip = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const {
         tripStatus,
         activeTrip,
@@ -23,7 +26,7 @@ const StartTrip = () => {
     const [startCoords, setStartCoords] = useState(null);
     const [endCoords, setEndCoords] = useState(null);
     const [loadingCoords, setLoadingCoords] = useState(false);
-    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
     const [transportMode, setTransportMode] = useState('');
     const [transportNo, setTransportNo] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
@@ -151,23 +154,26 @@ const StartTrip = () => {
         if (e) e.preventDefault();
         if (hasActiveTrip) return;
         if (validateForm()) {
-            setShowPrivacyModal(true);
-        }
-    };
-
-    const handlePrivacyConfirm = (choice) => {
-        setShowPrivacyModal(false);
-        const success = createTrip(
-            {
-                start: startLocation,
-                end: endLocation,
-                mode: transportMode,
-                vehicleNo: transportNo || null,
-            },
-            choice
-        );
-        if (success) {
-            navigate('/waiting-room');
+            // No privacy modal at creation — privacy is chosen when sending/accepting requests
+            const sid = getSessionId();
+            const tabSuffix = sid.slice(-4).toUpperCase();
+            const userDetails = {
+                name: user?.name || user?.username || `Traveler #${tabSuffix}`,
+                phone: user?.phone || user?.contact || null,
+                college: user?.college || null,
+            };
+            const success = createTrip(
+                {
+                    start: startLocation,
+                    end: endLocation,
+                    mode: transportMode,
+                    vehicleNo: transportNo || null,
+                },
+                userDetails
+            );
+            if (success) {
+                navigate('/waiting-room');
+            }
         }
     };
 
@@ -351,8 +357,8 @@ const StartTrip = () => {
                                         type="submit"
                                         disabled={hasActiveTrip}
                                         className={`w-full relative group overflow-hidden py-4 px-6 rounded-2xl transition-all duration-300 ${hasActiveTrip
-                                                ? 'bg-gray-300 cursor-not-allowed'
-                                                : 'bg-gray-900 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)]'
+                                            ? 'bg-gray-300 cursor-not-allowed'
+                                            : 'bg-gray-900 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)]'
                                             }`}
                                     >
                                         {!hasActiveTrip && (
@@ -380,13 +386,6 @@ const StartTrip = () => {
                     </div>
                 </div>
             </main>
-
-            <PrivacyModal
-                isOpen={showPrivacyModal}
-                onClose={() => setShowPrivacyModal(false)}
-                onConfirm={handlePrivacyConfirm}
-                partnerName="Potential Matches"
-            />
         </div>
     );
 };

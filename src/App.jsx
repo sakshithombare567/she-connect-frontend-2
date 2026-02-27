@@ -7,7 +7,6 @@ import ProtectedRoute from './routes/ProtectedRoute';
 // Pages
 import LandingPage from './pages/LandingPage';
 import Home from './pages/Home';
-import Requests from './pages/Requests';
 import StartTrip from './pages/StartTrip';
 import Blog from './pages/Blog';
 import Settings from './pages/Settings';
@@ -40,14 +39,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/requests"
-              element={
-                <ProtectedRoute>
-                  <Requests />
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/profile"
               element={
