@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTrip, TRIP_STATUS } from '../context/TripContext';
 import { getCoordsFromLocation } from '../utils/getCoordsFromLocation';
+import Chatroom from '../components/Chatroom';
 
 const LiveConnection = () => {
     const { loading: authLoading } = useAuth();
@@ -51,6 +52,7 @@ const LiveConnection = () => {
     const [endCoords, setEndCoords] = useState(null);
     const [distance, setDistance] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     // Modals
     const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -326,111 +328,121 @@ const LiveConnection = () => {
 
                         {/* Right Panel */}
                         <div className="space-y-6">
-                            {/* Partner Card */}
-                            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-gray-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-pink-50 transition-colors"></div>
-                                <h3 className="text-base font-black text-gray-900 mb-4 flex items-center gap-2">
-                                    Partner Profile <div className="w-1 h-1 rounded-full bg-pink-600"></div>
-                                </h3>
+                            {/* Chatroom */}
+                            {isChatOpen ? (
+                                <Chatroom partner={connectedPartner} onClose={() => setIsChatOpen(false)} />
+                            ) : (
+                                <>
+                                    {/* Partner Card */}
+                                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-gray-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-pink-50 transition-colors"></div>
+                                        <h3 className="text-base font-black text-gray-900 mb-4 flex items-center gap-2">
+                                            Partner Profile <div className="w-1 h-1 rounded-full bg-pink-600"></div>
+                                        </h3>
 
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-pink-600 font-black text-2xl border border-gray-100 shadow-inner group-hover:bg-pink-50 transition-colors">
-                                        {connectedPartner.privacy_type === 'details' ? connectedPartner.name?.charAt(0) : '?'}
-                                    </div>
-                                    <div>
-                                        <h4 className="text-lg font-black text-gray-900 tracking-tight">{connectedPartner.name}</h4>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            {connectedPartner.privacy_type === 'details' ? (
-                                                <span className="text-xs bg-pink-100 text-pink-600 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-                                                    {connectedPartner.college || 'Verified'}
-                                                </span>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 text-xs text-amber-600 font-bold">
-                                                    <EyeOff size={12} /><span>Anonymous ID Only</span>
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-pink-600 font-black text-2xl border border-gray-100 shadow-inner group-hover:bg-pink-50 transition-colors">
+                                                {connectedPartner.privacy_type === 'details' ? connectedPartner.name?.charAt(0) : '?'}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-black text-gray-900 tracking-tight">{connectedPartner.name}</h4>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    {connectedPartner.privacy_type === 'details' ? (
+                                                        <span className="text-xs bg-pink-100 text-pink-600 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                                            {connectedPartner.college || 'Verified'}
+                                                        </span>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1.5 text-xs text-amber-600 font-bold">
+                                                            <EyeOff size={12} /><span>Anonymous ID Only</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 pt-4 border-t border-gray-50">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"><MapPin size={16} /></div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Route</p>
+                                                    <p className="text-sm font-bold text-gray-700">{connectedPartner.start} → {connectedPartner.end}</p>
+                                                </div>
+                                            </div>
+                                            {connectedPartner.privacy_type === 'details' && connectedPartner.phone && (
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"><Phone size={16} /></div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Contact</p>
+                                                        <p className="text-sm font-bold text-gray-700">{connectedPartner.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {connectedPartner.privacy_type === 'details' && connectedPartner.college && (
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"><GraduationCap size={16} /></div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">College</p>
+                                                        <p className="text-sm font-bold text-gray-700">{connectedPartner.college}</p>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div className="space-y-3 pt-4 border-t border-gray-50">
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"><MapPin size={16} /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Route</p>
-                                            <p className="text-sm font-bold text-gray-700">{connectedPartner.start} → {connectedPartner.end}</p>
+                                        <div className="flex gap-2 mt-6">
+                                            <button
+                                                onClick={() => setIsChatOpen(true)}
+                                                className="flex-1 py-3 bg-pink-50 text-pink-600 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors"
+                                            >
+                                                <MessageCircle size={16} /> Chat
+                                            </button>
+                                            <button
+                                                onClick={emergencyAction}
+                                                className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-rose-700 transition-colors"
+                                            >
+                                                <AlertCircle size={16} /> Emergency
+                                            </button>
                                         </div>
                                     </div>
-                                    {connectedPartner.privacy_type === 'details' && connectedPartner.phone && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"><Phone size={16} /></div>
+
+                                    {/* My Sharing Status */}
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-dashed">
+                                        <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Contact</p>
-                                                <p className="text-sm font-bold text-gray-700">{connectedPartner.phone}</p>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">My Visibility</p>
+                                                {privacyChoice === 'details' ? (
+                                                    <div className="flex items-center gap-1.5 text-xs font-black text-pink-600"><Eye size={12} /> Sharing Full Details</div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 text-xs font-black text-blue-600"><Shield size={12} /> Anonymous Mode</div>
+                                                )}
+                                            </div>
+                                            <Shield className={privacyChoice === 'details' ? 'text-pink-200' : 'text-blue-400'} size={20} />
+                                        </div>
+                                    </div>
+
+                                    {/* Trip Summary */}
+                                    <div className="bg-gray-900 p-6 rounded-3xl text-white relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500 rounded-full blur-[80px] opacity-10"></div>
+                                        <h3 className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-4">Route</h3>
+                                        <div className="space-y-4 relative z-10">
+                                            <div className="flex gap-3">
+                                                <div className="flex flex-col items-center">
+                                                    <div className="w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)]"></div>
+                                                    <div className="w-0.5 h-8 border-l border-dashed border-white/20 my-1"></div>
+                                                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                                </div>
+                                                <div className="flex flex-col justify-between py-0.5">
+                                                    <div className="text-sm font-black">{activeTrip?.start}</div>
+                                                    <div className="text-sm font-black">{activeTrip?.end}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                                                <div className="text-xs font-bold text-white/40 uppercase tracking-widest">Transport</div>
+                                                <div className="text-xs font-black text-pink-400 uppercase tracking-widest capitalize">{activeTrip?.mode}</div>
                                             </div>
                                         </div>
-                                    )}
-                                    {connectedPartner.privacy_type === 'details' && connectedPartner.college && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"><GraduationCap size={16} /></div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">College</p>
-                                                <p className="text-sm font-bold text-gray-700">{connectedPartner.college}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="flex gap-2 mt-6">
-                                    <button className="flex-1 py-3 bg-pink-50 text-pink-600 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors">
-                                        <MessageCircle size={16} /> Chat
-                                    </button>
-                                    <button
-                                        onClick={emergencyAction}
-                                        className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-rose-700 transition-colors"
-                                    >
-                                        <AlertCircle size={16} /> Emergency
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* My Sharing Status */}
-                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-dashed">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">My Visibility</p>
-                                        {privacyChoice === 'details' ? (
-                                            <div className="flex items-center gap-1.5 text-xs font-black text-pink-600"><Eye size={12} /> Sharing Full Details</div>
-                                        ) : (
-                                            <div className="flex items-center gap-1.5 text-xs font-black text-blue-600"><Shield size={12} /> Anonymous Mode</div>
-                                        )}
                                     </div>
-                                    <Shield className={privacyChoice === 'details' ? 'text-pink-200' : 'text-blue-400'} size={20} />
-                                </div>
-                            </div>
-
-                            {/* Trip Summary */}
-                            <div className="bg-gray-900 p-6 rounded-3xl text-white relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500 rounded-full blur-[80px] opacity-10"></div>
-                                <h3 className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-4">Route</h3>
-                                <div className="space-y-4 relative z-10">
-                                    <div className="flex gap-3">
-                                        <div className="flex flex-col items-center">
-                                            <div className="w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)]"></div>
-                                            <div className="w-0.5 h-8 border-l border-dashed border-white/20 my-1"></div>
-                                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                        </div>
-                                        <div className="flex flex-col justify-between py-0.5">
-                                            <div className="text-sm font-black">{activeTrip?.start}</div>
-                                            <div className="text-sm font-black">{activeTrip?.end}</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                                        <div className="text-xs font-bold text-white/40 uppercase tracking-widest">Transport</div>
-                                        <div className="text-xs font-black text-pink-400 uppercase tracking-widest capitalize">{activeTrip?.mode}</div>
-                                    </div>
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
