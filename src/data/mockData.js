@@ -26,14 +26,12 @@ export const mockUser = {
             id: 1,
             emergency_name: "Mom",
             phone_no: "9999988888",
-            gender: "Female",
             relation: "Mother",
         },
         {
             id: 2,
             emergency_name: "Riya (Friend)",
             phone_no: "9911223344",
-            gender: "Female",
             relation: "Friend",
         },
     ],
@@ -52,9 +50,9 @@ export const mockLoginResponse = {
  * Signup OTP response  (POST /auth/signup)
  */
 export const mockSignupResponse = {
-    message: "OTP sent to sakshi.thombre@gmail.com",
+    message: "OTP sent to your email",
     otp_token: "mock-otp-token-abc123",
-    email: "sakshi.thombre@gmail.com",
+    email: "",
 };
 
 /**

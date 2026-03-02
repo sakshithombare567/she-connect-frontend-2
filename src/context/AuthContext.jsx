@@ -69,8 +69,21 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updateUser = (updatedFields) => {
+        setUser(prev => {
+            const updated = { ...prev, ...updatedFields };
+            // Persist to mock storage
+            const savedUser = localStorage.getItem('mock_registered_user');
+            if (savedUser) {
+                const parsed = JSON.parse(savedUser);
+                localStorage.setItem('mock_registered_user', JSON.stringify({ ...parsed, ...updatedFields }));
+            }
+            return updated;
+        });
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

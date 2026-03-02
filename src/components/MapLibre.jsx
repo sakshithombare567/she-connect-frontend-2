@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const MapLibreMap = ({ startCoords, endCoords, mode = 'route' }) => {
+const MapLibreMap = ({ startCoords, endCoords, mode = 'route', onLocateUser }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const routeAnimationRef = useRef(null);
@@ -23,6 +23,22 @@ const MapLibreMap = ({ startCoords, endCoords, mode = 'route' }) => {
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
     map.current.addControl(new maplibregl.FullscreenControl(), "top-right");
     map.current.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), "bottom-left");
+
+    // Live location button — tracks user's GPS position
+    const geolocate = new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showUserHeading: true,
+      showAccuracyCircle: true,
+    });
+    map.current.addControl(geolocate, "bottom-right");
+
+    // When user's location is detected, fire callback
+    geolocate.on('geolocate', (e) => {
+      if (onLocateUser) {
+        onLocateUser([e.coords.latitude, e.coords.longitude]);
+      }
+    });
 
     return () => {
       if (map.current) {
@@ -264,6 +280,16 @@ const MapLibreMap = ({ startCoords, endCoords, mode = 'route' }) => {
           padding: 8px 12px !important;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
           font-family: inherit;
+        }
+        .maplibregl-ctrl-geolocate {
+          border-radius: 12px !important;
+        }
+        .maplibregl-user-location-dot {
+          background-color: #ec4899 !important;
+          box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.3) !important;
+        }
+        .maplibregl-user-location-accuracy-circle {
+          background-color: rgba(236, 72, 153, 0.1) !important;
         }
       `}</style>
     </div>

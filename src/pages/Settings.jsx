@@ -9,83 +9,94 @@ const Settings = () => {
         {
             title: "Notifications",
             icon: Bell,
-            color: "text-blue-500 bg-blue-50",
+            gradient: "linear-gradient(135deg, var(--color-accent), #6D28D9)",
+            lightBg: "#F3EEFF",
             desc: "Manage how you receive trip alerts and messages"
         },
         {
             title: "Privacy & Visibility",
             icon: Eye,
-            color: "text-purple-500 bg-purple-50",
+            gradient: "linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))",
+            lightBg: "var(--color-primary-light)",
             desc: "Control who can see your travel profile and college info"
         },
         {
             title: "Safety Shield",
             icon: Shield,
-            color: "text-green-500 bg-green-50",
+            gradient: "linear-gradient(135deg, #10B981, #059669)",
+            lightBg: "#D1FAE5",
             desc: "Configure emergency trigger settings and location sharing"
         },
         {
             title: "Help & Support",
             icon: HelpCircle,
-            color: "text-orange-500 bg-orange-50",
+            gradient: "linear-gradient(135deg, var(--color-accent-alt), #D97706)",
+            lightBg: "#FEF3C7",
             desc: "Contact 24/7 support or read safety guidelines"
         }
     ];
 
     return (
-        <div className="flex h-screen bg-[#f8fafc] font-sans text-gray-900">
+        <div className="flex h-screen" style={{ background: 'var(--color-surface-alt, #F5F0FA)', color: 'var(--color-text-primary)' }}>
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-            <main className="flex-1 overflow-y-auto relative text-gray-900">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
                 {/* Mobile Header */}
-                <header className="md:hidden sticky top-0 bg-white/80 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b border-gray-50">
-                    <h1 className="text-xl font-black tracking-tighter">She<span className="text-pink-600">Connect</span></h1>
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-gray-50 rounded-xl text-gray-600">
-                        <Menu size={24} />
+                <header className="md:hidden sticky top-0 glass-strong z-40 px-4 py-3 flex justify-between items-center">
+                    <h1 className="text-lg font-black tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>She<span style={{ color: 'var(--color-primary)' }}>Connect</span></h1>
+                    <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-xl" style={{ background: 'var(--color-primary-light)', color: 'var(--color-text-secondary)' }}>
+                        <Menu size={22} />
                     </button>
                 </header>
 
-                <div className="max-w-4xl mx-auto p-6 md:p-10">
-                    <div className="mb-10 text-gray-900">
-                        <p className="text-pink-600 font-bold uppercase tracking-widest text-xs mb-2">Preferences</p>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tight leading-tight">
-                            App <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-rose-600">Settings</span> ⚙️
+                <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-10">
+                    <div className="mb-6 sm:mb-10">
+                        <p className="font-bold uppercase tracking-widest text-xs mb-2" style={{ color: 'var(--color-primary)' }}>Preferences</p>
+                        <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                            App <span style={{
+                                background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent'
+                            }}>Settings</span> ⚙️
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6">
-                        <div className="bg-white p-8 md:p-10 rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-pink-50 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition-opacity"></div>
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                        <div className="glass p-5 sm:p-8 md:p-10 rounded-3xl sm:rounded-[40px] shadow-lg relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: 'var(--color-primary)' }}></div>
 
-                            <div className="relative z-10 space-y-4">
-                                <div className="flex items-center gap-5 mb-10 pb-6 border-b border-gray-50">
-                                    <div className="bg-gradient-to-br from-pink-500 to-rose-500 p-4 rounded-[20px] shadow-lg shadow-pink-100 text-white">
+                            <div className="relative z-10 space-y-3 sm:space-y-4">
+                                <div className="flex items-center gap-3 sm:gap-5 mb-6 sm:mb-10 pb-4 sm:pb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+                                    <div className="p-3 sm:p-4 rounded-2xl sm:rounded-[20px] shadow-lg text-white"
+                                        style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' }}>
                                         <SettingsIcon size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-black text-gray-900 tracking-tight">App Preferences</h3>
-                                        <p className="text-gray-400 font-medium font-sans">Customize your SheConnect experience</p>
+                                        <h3 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: 'var(--color-text-primary)' }}>App Preferences</h3>
+                                        <p className="font-medium text-sm hidden sm:block" style={{ color: 'var(--color-text-secondary)' }}>Customize your SheConnect experience</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 text-gray-900">
+                                <div className="space-y-4">
                                     {settingSections.map((section, index) => {
                                         const Icon = section.icon;
                                         return (
                                             <button
                                                 key={index}
-                                                className="w-full text-gray-900 p-6 rounded-3xl border border-gray-50 hover:border-pink-100 hover:bg-pink-50/30 transition-all flex items-center justify-between group/item"
+                                                className="w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl transition-all flex items-center justify-between group/item glass hover:shadow-lg hover:-translate-y-0.5"
                                             >
-                                                <div className="flex items-center gap-5">
-                                                    <div className={`p-4 rounded-2xl ${section.color} transition-transform group-hover/item:scale-110`}>
-                                                        <Icon size={24} />
+                                                <div className="flex items-center gap-3 sm:gap-5">
+                                                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-transform group-hover/item:scale-110 text-white"
+                                                        style={{ background: section.gradient }}>
+                                                        <Icon size={20} />
                                                     </div>
                                                     <div className="text-left">
-                                                        <h4 className="font-black text-gray-900 tracking-tight">{section.title}</h4>
-                                                        <p className="text-sm text-gray-400 font-bold font-sans">{section.desc}</p>
+                                                        <h4 className="font-black tracking-tight text-sm sm:text-base" style={{ color: 'var(--color-text-primary)' }}>{section.title}</h4>
+                                                        <p className="text-xs sm:text-sm font-bold hidden sm:block" style={{ color: 'var(--color-text-secondary)' }}>{section.desc}</p>
                                                     </div>
                                                 </div>
-                                                <div className="bg-gray-50 p-2 rounded-xl text-gray-300 group-hover/item:text-pink-600 group-hover/item:bg-pink-100 transition-all">
+                                                <div className="p-2 rounded-xl transition-all"
+                                                    style={{ background: 'rgba(255,255,255,0.5)', color: 'var(--color-text-secondary)' }}>
                                                     <ChevronRight size={20} />
                                                 </div>
                                             </button>
@@ -95,10 +106,10 @@ const Settings = () => {
                             </div>
                         </div>
 
-                        <div className="bg-gray-900 p-10 rounded-[40px] shadow-2xl text-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500 rounded-full blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <div className="glass-dark p-6 sm:p-10 rounded-3xl sm:rounded-[40px] shadow-2xl text-white relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[100px] opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: 'var(--color-primary)' }}></div>
                             <h4 className="text-xl font-black mb-2">Beta Access</h4>
-                            <p className="text-gray-400 font-medium leading-relaxed max-w-sm">Some advanced settings like "Dark Mode" and "Voice Alerts" are coming in the next update!</p>
+                            <p className="font-medium leading-relaxed max-w-sm text-gray-400">Some advanced settings like "Dark Mode" and "Voice Alerts" are coming in the next update!</p>
                         </div>
                     </div>
                 </div>

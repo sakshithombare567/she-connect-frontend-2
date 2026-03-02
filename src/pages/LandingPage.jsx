@@ -14,7 +14,7 @@ function LandingPage() {
     const closeAuth = () => setIsAuthOpen(false);
 
     return (
-        <div className="font-sans antialiased text-gray-900 bg-white min-h-screen flex flex-col">
+        <div className="antialiased min-h-screen flex flex-col" style={{ color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}>
             <Navbar onAuthClick={openAuth} />
             <main className="flex-grow">
                 <Hero />

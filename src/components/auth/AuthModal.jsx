@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Login from './Login';
 import Signup from './Signup';
 import ForgotPassword from './ForgotPassword';
 import { useAuth } from '../../context/AuthContext';
-import { loginUser, signupUser, verifySignupOtp, forgotPassword, verifyForgotOtp, resetPassword } from "../../services/authService";
+import { loginUser, signupUser, verifySignupOtp, forgotPassword, verifyForgotOtp, resetPassword, resendOtp } from "../../services/authService";
 
 const AuthModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
@@ -24,12 +24,20 @@ const AuthModal = ({ isOpen, onClose }) => {
     const [fullName, setFullName] = useState('');
     const [collegeName, setCollegeName] = useState('');
     const [phone, setPhone] = useState('');
-    const [gender, setGender] = useState('');
 
-    const [emergency1, setEmergency1] = useState({ name: '', phone: '', gender: '' });
-    const [emergency2, setEmergency2] = useState({ name: '', phone: '', gender: '' });
+    const [emergency1, setEmergency1] = useState({ name: '', phone: '' });
+    const [emergency2, setEmergency2] = useState({ name: '', phone: '' });
 
     const [fieldErrors, setFieldErrors] = useState({}); // { email: 'Error message', ... }
+
+    // Auto-dismiss message banner after 4 seconds
+    useEffect(() => {
+        if (!message.text) return;
+        const timer = setTimeout(() => {
+            setMessage({ type: '', text: '' });
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [message.text]);
 
     if (!isOpen) return null;
 
@@ -42,9 +50,8 @@ const AuthModal = ({ isOpen, onClose }) => {
         setFullName('');
         setCollegeName('');
         setPhone('');
-        setGender('');
-        setEmergency1({ name: '', phone: '', gender: '' });
-        setEmergency2({ name: '', phone: '', gender: '' });
+        setEmergency1({ name: '', phone: '' });
+        setEmergency2({ name: '', phone: '' });
         setMessage({ type: '', text: '' });
         setFieldErrors({});
         onClose();
@@ -212,18 +219,6 @@ const AuthModal = ({ isOpen, onClose }) => {
         const v2_name = validateField("emergency2_name", emergency2.name);
         const v2_phone = validateField("emergency2_phone", emergency2.phone);
 
-        if (!emergency1.gender) {
-            setFieldErrors(prev => ({ ...prev, emergency1_gender: "Select gender" }));
-        } else {
-            setFieldErrors(prev => ({ ...prev, emergency1_gender: "" }));
-        }
-
-        if (!emergency2.gender) {
-            setFieldErrors(prev => ({ ...prev, emergency2_gender: "Select gender" }));
-        } else {
-            setFieldErrors(prev => ({ ...prev, emergency2_gender: "" }));
-        }
-
         // Duplicate/Self Checks
         let contactMatchError = "";
         if (emergency1.phone === emergency2.phone) {
@@ -234,7 +229,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
         setFieldErrors(prev => ({ ...prev, contactMatch: contactMatchError }));
 
-        if (v1_name && v1_phone && v2_name && v2_phone && emergency1.gender && emergency2.gender && !contactMatchError) {
+        if (v1_name && v1_phone && v2_name && v2_phone && !contactMatchError) {
             setView('signup_step3');
             setMessage({ type: '', text: '' });
         }
@@ -260,13 +255,11 @@ const AuthModal = ({ isOpen, onClose }) => {
                 emergency_contacts: [
                     {
                         emergency_name: emergency1.name,
-                        phone_no: emergency1.phone,
-                        gender: emergency1.gender
+                        phone_no: emergency1.phone
                     },
                     {
                         emergency_name: emergency2.name,
-                        phone_no: emergency2.phone,
-                        gender: emergency2.gender
+                        phone_no: emergency2.phone
                     }
                 ]
             };
@@ -404,28 +397,33 @@ const AuthModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
                 <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md transition-opacity" aria-hidden="true" onClick={resetState}></div>
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div className="inline-block align-bottom bg-white rounded-[48px] text-left overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full relative border border-white">
+                <div className="relative inline-block w-full max-w-lg bg-white rounded-3xl sm:rounded-[48px] text-left overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] transform transition-all sm:my-8 border border-white">
                     {/* Background Blobs */}
                     <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-pink-100 rounded-full blur-[100px] opacity-40 -z-10"></div>
                     <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-blue-100 rounded-full blur-[100px] opacity-40 -z-10"></div>
-                    <div className="absolute top-0 right-0 pt-4 pr-4">
-                        <button type="button" className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none" onClick={resetState}>
+                    {/* Close Button — sits on the modal corner */}
+                    <div className="absolute -top-2 -right-2 sm:top-2 sm:right-2 z-30">
+                        <button type="button" className="bg-white shadow-lg rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 focus:outline-none transition-all border border-gray-100" onClick={resetState}>
                             <span className="sr-only">Close</span>
-                            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
-                    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div className="sm:flex sm:items-start justify-center">
-                            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <div className="px-5 pt-6 pb-6 sm:px-8 sm:pt-8 sm:pb-8">
+                        <div className="w-full">
+                            <div className="w-full">
                                 {message.text && (
-                                    <div className={`mb-4 p-3 rounded text-sm font-medium ${message.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                        {message.text}
+                                    <div className={`mb-4 p-3 rounded-2xl text-sm font-semibold flex items-center justify-between gap-2 animate-in fade-in slide-in-from-top-2 duration-300 ${message.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                        <span>{message.text}</span>
+                                        <button type="button" onClick={() => setMessage({ type: '', text: '' })} className="shrink-0 p-0.5 rounded-full hover:bg-black/5 transition-colors">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 )}
 
@@ -456,8 +454,6 @@ const AuthModal = ({ isOpen, onClose }) => {
                                         setEmail={setEmail}
                                         phone={phone}
                                         setPhone={setPhone}
-                                        gender={gender}
-                                        setGender={setGender}
                                         emergency1={emergency1}
                                         setEmergency1={setEmergency1}
                                         emergency2={emergency2}
@@ -475,6 +471,15 @@ const AuthModal = ({ isOpen, onClose }) => {
                                         handleBackToLogin={handleBackToLogin}
                                         fieldErrors={fieldErrors}
                                         validateField={validateField}
+                                        onResendOtp={async () => {
+                                            try {
+                                                const res = await resendOtp(email, 'signup');
+                                                setMessage({ type: 'success', text: res.data.message || 'OTP resent successfully!' });
+                                            } catch (err) {
+                                                setMessage({ type: 'error', text: err?.response?.data?.detail || 'Failed to resend OTP' });
+                                                throw err;
+                                            }
+                                        }}
                                     />
                                 )}
 

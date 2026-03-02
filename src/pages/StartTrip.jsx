@@ -96,13 +96,13 @@ const StartTrip = () => {
             case 'ola':
             case 'auto':
             case 'cab':
-                return "e.g. MH 12 AB 1234 (optional)";
+                return "e.g. MH 12 AB 1234";
             case 'train':
-                return "e.g. 12123 or Deccan Queen (optional)";
+                return "e.g. 12123 or Deccan Queen";
             case 'metro':
-                return "e.g. Blue Line or Pink Line (optional)";
+                return "e.g. Blue Line or Pink Line";
             default:
-                return "Vehicle/ID number (optional)";
+                return "Vehicle/ID number";
         }
     };
 
@@ -177,6 +177,34 @@ const StartTrip = () => {
         }
     };
 
+    // When the user clicks the locate button, reverse-geocode and auto-fill start location
+    const handleLocateUser = async (coords) => {
+        try {
+            const [lat, lng] = coords;
+            // Set map start marker immediately
+            startFromSuggestion.current = true;
+            setStartCoords(coords);
+
+            // Reverse geocode to get address
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`
+            );
+            const data = await res.json();
+            if (data && data.display_name) {
+                // Build a short readable address
+                const addr = data.address;
+                const shortAddress = [
+                    addr.road || addr.neighbourhood || addr.suburb,
+                    addr.city || addr.town || addr.village || addr.county,
+                    addr.state
+                ].filter(Boolean).join(', ');
+                setStartLocation(shortAddress || data.display_name.split(',').slice(0, 3).join(','));
+            }
+        } catch (err) {
+            console.error('Reverse geocoding failed:', err);
+        }
+    };
+
     return (
         <div className="flex h-screen bg-[#f8fafc] font-sans">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -239,7 +267,11 @@ const StartTrip = () => {
                                     <div className="text-sm font-medium text-gray-400">Personalizing your map...</div>
                                 </div>
                             ) : (
-                                <MapLibreMap startCoords={startCoords} endCoords={endCoords} />
+                                <MapLibreMap
+                                    startCoords={startCoords}
+                                    endCoords={endCoords}
+                                    onLocateUser={handleLocateUser}
+                                />
                             )}
                         </div>
                     </div>
@@ -277,7 +309,7 @@ const StartTrip = () => {
                                                     }
                                                 }
                                             }}
-                                            placeholder="Where should we pick you up?"
+                                            placeholder="What is source location?"
                                             error={fieldErrors.startLocation}
                                         />
                                         {fieldErrors.startLocation && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.startLocation}</p>}
@@ -297,7 +329,7 @@ const StartTrip = () => {
                                                     }
                                                 }
                                             }}
-                                            placeholder="Where are you heading?"
+                                            placeholder="What is Destination location?"
                                             error={fieldErrors.endLocation}
                                         />
                                         {fieldErrors.endLocation && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.endLocation}</p>}
@@ -321,7 +353,7 @@ const StartTrip = () => {
                                                 required
                                             >
                                                 <option value="">Choose your mode</option>
-                                                <option value="car">Car Pool</option>
+                                                <option value="car">Private Car</option>
                                                 <option value="bus">Public Bus</option>
                                                 <option value="train">Railway</option>
                                                 <option value="uber">Uber / Ola</option>
@@ -335,7 +367,7 @@ const StartTrip = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <label htmlFor="transportNo" className="block text-sm font-bold text-gray-700 ml-1">
-                                            Travel ID / Vehicle No. <span className="text-gray-300 font-medium">(Optional)</span>
+                                            Vehicle Number <span className="text-gray-300 font-medium"></span>
                                         </label>
                                         <input
                                             type="text"
@@ -346,8 +378,7 @@ const StartTrip = () => {
                                                 validateField('transportNo', e.target.value);
                                             }}
                                             className={`w-full px-5 py-3.5 bg-gray-50/50 border rounded-2xl focus:ring-4 outline-none transition-all hover:bg-white hover:border-gray-300 ${fieldErrors.transportNo ? 'border-red-500 focus:ring-red-500/10' : 'border-gray-200 focus:ring-pink-500/10 focus:border-pink-500'}`}
-                                            placeholder={getPlaceholder()}
-                                        />
+                                            placeholder="What is Vehicle Number" />
                                         {fieldErrors.transportNo && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.transportNo}</p>}
                                     </div>
                                 </div>

@@ -56,15 +56,18 @@ export const signupUser = async (formData) => {
   if (USE_MOCK) {
     await delay();
     // Persist registration info for mock session
+    const collegeName = formData.college_id === 1 ? "IMCC" : `College #${formData.college_id}`;
     localStorage.setItem('mock_registered_user', JSON.stringify({
       name: formData.name,
       email_id: formData.email_id,
+      phone_no: formData.phone_no,
       password: formData.password,
-      college: "IMCC"
+      college: collegeName,
+      emergency_contacts: formData.emergency_contacts || []
     }));
 
     return {
-      data: { ...mockSignupResponse, email: formData.email_id },
+      data: { ...mockSignupResponse, email: formData.email_id, message: `OTP sent to ${formData.email_id}` },
     };
   }
   return api.post("/auth/signup", formData);

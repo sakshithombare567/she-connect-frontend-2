@@ -1,7 +1,85 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 @import "tailwindcss";
 
 :root {
-  font-family: 'Outfit', sans-serif;
-  background-color: #fce7f3; /* Light pink background */
+  font-family: 'DM Sans', sans-serif;
+  background-color: #FDFBFE;
+
+  /* Color Palette */
+  --color-primary: #B5436E;
+  --color-primary-light: #F9E8EF;
+  --color-primary-dark: #8E2D53;
+  --color-accent: #7C3AED;
+  --color-accent-alt: #F59E0B;
+  --color-text-primary: #1E1B2E;
+  --color-text-secondary: #64607A;
+  --color-surface: #FDFBFE;
+  --color-surface-alt: #F5F0FA;
+}
+
+/* Global Glass Utility */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-dark {
+  background: rgba(30, 27, 46, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Blob Animations */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -50px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.95); }
+  75% { transform: translate(20px, 40px) scale(1.05); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-blob {
+  animation: blob 8s infinite ease-in-out;
+}
+
+.animate-blob-delay-2 {
+  animation: blob 8s infinite ease-in-out 2s;
+}
+
+.animate-blob-delay-4 {
+  animation: blob 8s infinite ease-in-out 4s;
+}
+
+.animate-float {
+  animation: float 6s infinite ease-in-out;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection Colors */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
 }

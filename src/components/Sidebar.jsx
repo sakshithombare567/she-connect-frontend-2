@@ -39,14 +39,15 @@ const Sidebar = ({ isOpen, onClose }) => {
 
             {/* Sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-out md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed inset-y-0 left-0 z-50 w-72 glass-strong shadow-2xl transform transition-transform duration-300 ease-out md:relative md:translate-x-0 md:z-auto ${isOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
+                style={{ pointerEvents: 'auto' }}
             >
-                <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-white">
-                    <h1 className="text-2xl font-black tracking-tighter text-gray-900">
-                        She<span className="text-pink-600">Connect</span>
+                <div className="p-8 flex justify-between items-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+                    <h1 className="text-2xl font-black tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>
+                        She<span style={{ color: 'var(--color-primary)' }}>Connect</span>
                     </h1>
-                    <button onClick={onClose} className="md:hidden text-gray-400 p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                    <button onClick={onClose} className="md:hidden p-2 rounded-xl transition-colors" style={{ color: 'var(--color-text-secondary)' }}>
                         <X size={24} />
                     </button>
                 </div>
@@ -61,27 +62,44 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     to={item.path}
                                     onClick={onClose}
                                     className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 group ${isActive(item.path)
-                                        ? 'bg-pink-600 text-white shadow-lg shadow-pink-200 translate-x-1'
-                                        : item.highlight ? 'text-pink-600 bg-pink-50 hover:bg-pink-100'
-                                            : 'text-gray-500 hover:bg-pink-50 hover:text-pink-600'
+                                        ? 'text-white shadow-lg translate-x-1'
+                                        : ''
                                         }`}
+                                    style={isActive(item.path)
+                                        ? { background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' }
+                                        : { color: 'var(--color-text-secondary)' }
+                                    }
+                                    onMouseEnter={e => {
+                                        if (!isActive(item.path)) {
+                                            e.currentTarget.style.background = 'var(--color-primary-light)';
+                                            e.currentTarget.style.color = 'var(--color-primary)';
+                                        }
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (!isActive(item.path)) {
+                                            e.currentTarget.style.background = 'transparent';
+                                            e.currentTarget.style.color = 'var(--color-text-secondary)';
+                                        }
+                                    }}
                                 >
                                     <div className="flex items-center space-x-3.5">
                                         <div className="relative">
                                             <Icon
                                                 size={22}
-                                                className={`${isActive(item.path) ? 'text-white' : item.highlight ? 'text-pink-600' : 'text-gray-400 group-hover:text-pink-500'} transition-colors`}
+                                                className="transition-colors"
                                             />
                                             {item.indicator && !isActive(item.path) && (
                                                 <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                                             )}
                                         </div>
-                                        <span className={`font-semibold ${isActive(item.path) ? 'text-white' : ''}`}>
+                                        <span className="font-semibold">
                                             {item.label}
                                         </span>
                                     </div>
                                     {item.badge && (
-                                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black ${isActive(item.path) ? 'bg-white text-pink-600' : 'bg-pink-600 text-white'}`}>
+                                        <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black ${isActive(item.path) ? 'bg-white' : 'text-white'}`}
+                                            style={isActive(item.path) ? { color: 'var(--color-primary)' } : { background: 'var(--color-primary)' }}
+                                        >
                                             {item.badge}
                                         </span>
                                     )}
@@ -90,18 +108,27 @@ const Sidebar = ({ isOpen, onClose }) => {
                         })}
                     </nav>
 
-                    <div className="pt-4 border-t border-gray-50 px-2 pb-6">
+                    <div className="pt-4 px-2 pb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.3)' }}>
                         <button
                             onClick={logout}
-                            className="w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group"
+                            className="w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 group"
+                            style={{ color: 'var(--color-text-secondary)' }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = '#FEF2F2';
+                                e.currentTarget.style.color = '#DC2626';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--color-text-secondary)';
+                            }}
                         >
                             <LogOut size={22} className="group-hover:translate-x-0.5 transition-transform" />
                             <span className="font-semibold">Logout</span>
                         </button>
 
-                        <div className="mt-8 p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-[20px] border border-pink-100/50">
-                            <p className="text-[11px] font-bold text-pink-600 uppercase tracking-widest mb-1">Support</p>
-                            <p className="text-xs text-pink-700/70 font-medium leading-relaxed">Need help? We're here for you 24/7.</p>
+                        <div className="mt-8 p-4 rounded-[20px] glass" style={{ borderColor: 'rgba(181,67,110,0.15)' }}>
+                            <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--color-primary)' }}>Support</p>
+                            <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>Need help? We're here for you 24/7.</p>
                         </div>
                     </div>
                 </div>

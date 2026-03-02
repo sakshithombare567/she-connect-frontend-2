@@ -44,31 +44,36 @@ const Blog = () => {
     };
 
     return (
-        <div className="flex h-screen bg-[#f8fafc] font-sans text-gray-900">
+        <div className="flex h-screen" style={{ background: 'var(--color-surface-alt, #F5F0FA)', color: 'var(--color-text-primary)' }}>
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-            <main className="flex-1 overflow-y-auto relative">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
                 {/* Mobile Header */}
-                <header className="md:hidden sticky top-0 bg-white/80 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b border-gray-50">
-                    <h1 className="text-xl font-black tracking-tighter">She<span className="text-pink-600">Connect</span></h1>
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-gray-50 rounded-xl text-gray-600">
-                        <Menu size={24} />
+                <header className="md:hidden sticky top-0 glass-strong z-40 px-4 py-3 flex justify-between items-center">
+                    <h1 className="text-lg font-black tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>She<span style={{ color: 'var(--color-primary)' }}>Connect</span></h1>
+                    <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-xl" style={{ background: 'var(--color-primary-light)', color: 'var(--color-text-secondary)' }}>
+                        <Menu size={22} />
                     </button>
                 </header>
 
-                <div className="max-w-5xl mx-auto p-6 md:p-10">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+                <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-10 gap-4 sm:gap-6">
                         <div>
-                            <p className="text-pink-600 font-bold uppercase tracking-widest text-xs mb-2">Community Voices</p>
-                            <h2 className="text-4xl font-black text-gray-900 tracking-tight leading-tight">
-                                Travel <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-rose-600">Stories</span> 📖
+                            <p className="font-bold uppercase tracking-widest text-xs mb-2" style={{ color: 'var(--color-primary)' }}>Community Voices</p>
+                            <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                                Travel <span style={{
+                                    background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent'
+                                }}>Stories</span> 📖
                             </h2>
                         </div>
                         <button
                             onClick={() => setShowForm(!showForm)}
-                            className="bg-gray-900 text-white px-8 py-4 rounded-2xl hover:shadow-2xl hover:shadow-pink-100 transition-all font-bold flex items-center justify-center gap-2 group overflow-hidden relative"
+                            className="text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl hover:shadow-2xl transition-all font-bold flex items-center justify-center gap-2 group overflow-hidden relative text-sm sm:text-base"
+                            style={{ background: 'var(--color-text-primary)' }}
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' }}></div>
                             <span className="relative flex items-center gap-2">
                                 {showForm ? <X size={20} /> : <Plus size={20} />}
                                 {showForm ? 'Cancel Writing' : 'Write a Story'}
@@ -77,32 +82,34 @@ const Blog = () => {
                     </div>
 
                     {showForm && (
-                        <div className="bg-white p-8 rounded-[32px] shadow-2xl shadow-pink-50/50 mb-10 border border-pink-100/50 animate-in slide-in-from-top-4 duration-300">
+                        <div className="glass-strong p-8 rounded-[32px] shadow-2xl mb-10">
                             <h3 className="text-xl font-black mb-6 flex items-center gap-3">
-                                <span className="bg-pink-100 text-pink-600 p-2 rounded-xl"><Plus size={20} /></span>
+                                <span className="p-2 rounded-xl" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}><Plus size={20} /></span>
                                 Share your experience
                             </h3>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-1">
-                                    <label className="block text-sm font-bold text-gray-700 ml-1 uppercase tracking-wider text-[10px]">Title</label>
+                                    <label className="block font-bold ml-1 uppercase tracking-wider text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>Title</label>
                                     <input
                                         type="text"
                                         name="title"
                                         value={newBlog.title}
                                         onChange={handleInputChange}
-                                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all font-semibold"
+                                        className="w-full p-4 rounded-2xl outline-none transition-all font-semibold glass"
+                                        style={{ color: 'var(--color-text-primary)' }}
                                         placeholder="Give your blog a catchy title..."
                                         required
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="block text-sm font-bold text-gray-700 ml-1 uppercase tracking-wider text-[10px]">Content</label>
+                                    <label className="block font-bold ml-1 uppercase tracking-wider text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>Content</label>
                                     <textarea
                                         name="content"
                                         value={newBlog.content}
                                         onChange={handleInputChange}
                                         rows="6"
-                                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500 outline-none transition-all font-medium leading-relaxed"
+                                        className="w-full p-4 rounded-2xl outline-none transition-all font-medium leading-relaxed glass"
+                                        style={{ color: 'var(--color-text-primary)' }}
                                         placeholder="Write about your journey, safety tips, or recommendations..."
                                         required
                                     ></textarea>
@@ -110,7 +117,8 @@ const Blog = () => {
                                 <div className="flex justify-end">
                                     <button
                                         type="submit"
-                                        className="bg-pink-600 text-white px-10 py-4 rounded-2xl hover:bg-pink-700 hover:shadow-xl hover:shadow-pink-200 transition-all font-black text-sm uppercase tracking-widest"
+                                        className="text-white px-10 py-4 rounded-2xl hover:shadow-xl transition-all font-black text-sm uppercase tracking-widest"
+                                        style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' }}
                                     >
                                         Publish Story
                                     </button>
@@ -121,42 +129,42 @@ const Blog = () => {
 
                     <div className="space-y-8">
                         {blogs.length === 0 ? (
-                            <div className="bg-white p-16 rounded-[40px] border border-dashed border-gray-200 text-center">
-                                <p className="text-gray-400 font-bold text-lg">No blogs yet. Be the first to share your journey! ✨</p>
+                            <div className="glass p-16 rounded-[40px] border border-dashed text-center" style={{ borderColor: 'var(--color-text-secondary)' }}>
+                                <p className="font-bold text-lg" style={{ color: 'var(--color-text-secondary)' }}>No blogs yet. Be the first to share your journey! ✨</p>
                             </div>
                         ) : (
                             blogs.map(blog => (
-                                <div key={blog.id} className="bg-white p-8 md:p-10 rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-white hover:border-pink-100 hover:shadow-pink-100/20 transition-all group overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-opacity"></div>
+                                <div key={blog.id} className="glass p-8 md:p-10 rounded-[40px] shadow-lg hover:shadow-xl transition-all group overflow-hidden relative hover:-translate-y-0.5">
+                                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-40 transition-opacity" style={{ background: 'var(--color-primary-light)' }}></div>
 
                                     <div className="relative z-10">
                                         <div className="flex items-center gap-3 mb-4">
                                             {blog.tags && blog.tags.map(tag => (
-                                                <span key={tag} className="text-[10px] font-black text-pink-600 uppercase tracking-widest bg-pink-100/50 px-3 py-1 rounded-full border border-pink-100">
+                                                <span key={tag} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full" style={{ color: 'var(--color-primary)', background: 'var(--color-primary-light)' }}>
                                                     #{tag}
                                                 </span>
                                             ))}
                                         </div>
-                                        <h2 className="text-3xl font-black text-gray-900 mb-4 group-hover:text-pink-600 transition-colors leading-tight">
+                                        <h2 className="text-3xl font-black mb-4 transition-colors leading-tight" style={{ color: 'var(--color-text-primary)' }}>
                                             {blog.title}
                                         </h2>
-                                        <div className="flex flex-wrap items-center gap-6 text-sm text-gray-400 font-bold mb-8">
+                                        <div className="flex flex-wrap items-center gap-6 text-sm font-bold mb-8" style={{ color: 'var(--color-text-secondary)' }}>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-pink-600">
+                                                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
                                                     <User size={16} />
                                                 </div>
                                                 <span>{blog.author}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Calendar size={18} className="text-rose-400" />
+                                                <Calendar size={18} style={{ color: 'var(--color-accent)' }} />
                                                 <span>{blog.date}</span>
                                             </div>
                                             <div className="flex items-center gap-2 ml-auto">
-                                                <Heart size={18} className="text-pink-500 fill-pink-500" />
-                                                <span className="text-pink-600">{blog.likes || 0}</span>
+                                                <Heart size={18} style={{ color: 'var(--color-primary)', fill: 'var(--color-primary)' }} />
+                                                <span style={{ color: 'var(--color-primary)' }}>{blog.likes || 0}</span>
                                             </div>
                                         </div>
-                                        <div className="text-gray-700 leading-[1.8] font-medium text-lg whitespace-pre-wrap">
+                                        <div className="leading-[1.8] font-medium text-lg whitespace-pre-wrap" style={{ color: 'var(--color-text-secondary)' }}>
                                             {blog.content}
                                         </div>
                                     </div>
