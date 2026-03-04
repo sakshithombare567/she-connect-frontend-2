@@ -10,7 +10,7 @@ import {
 // ─────────────────────────────────────────────────────────
 //  Toggle this flag to switch between mock and real backend
 // ─────────────────────────────────────────────────────────
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 // Helper: simulate network delay so it feels realistic
 const delay = (ms = 600) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -52,22 +52,30 @@ export const loginUser = async (email_id, password) => {
 // ─────────────────────────────────────────────────────────
 //  SIGNUP  (POST /auth/signup)
 // ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+//  SIGNUP  (POST /auth/signup)
+// ─────────────────────────────────────────────────────────
 export const signupUser = async (formData) => {
   if (USE_MOCK) {
     await delay();
-    // Persist registration info for mock session
-    localStorage.setItem('mock_registered_user', JSON.stringify({
-      name: formData.name,
-      email_id: formData.email_id,
-      password: formData.password,
-      college: "IMCC"
-    }));
-
     return {
-      data: { ...mockSignupResponse, email: formData.email_id },
+      data: {
+        message: "Mock signup success",
+        otp_token: "mock-token",
+      },
     };
   }
-  return api.post("/auth/signup", formData);
+
+  // ✅ Send full payload exactly as backend expects
+  return api.post("/auth/signup", {
+    name: formData.name,
+    email_id: formData.email_id,
+    phone_no: formData.phone_no,
+    password: formData.password,
+    confirm_password: formData.confirm_password,
+    college_id: formData.college_id,
+    emergency_contacts: formData.emergency_contacts,
+  });
 };
 
 // ─────────────────────────────────────────────────────────
@@ -96,7 +104,7 @@ export const forgotPassword = async (email) => {
       },
     };
   }
-  return api.post(`/auth/forgot-password?email=${encodeURIComponent(email)}`);
+   return api.post(`/auth/forgot-password`, { email });
 };
 
 // ─────────────────────────────────────────────────────────
@@ -156,7 +164,7 @@ export const getProfile = async () => {
     }
     return { data: mockUser };
   }
-  return api.get("/auth/me");
+  return api.get("/home/");
 };
 
 // ─────────────────────────────────────────────────────────

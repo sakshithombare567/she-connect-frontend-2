@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
             setUser(response.data);
         } catch (error) {
             console.error("Failed to fetch profile:", error);
-            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             setUser(null);
         } finally {
             setLoading(false);
@@ -51,9 +51,15 @@ export const AuthProvider = ({ children }) => {
             if (userData.access_token) {
                 console.log("AuthContext: token found, saving to sessionStorage");
                 sessionStorage.setItem('token', userData.access_token);
-                console.log("AuthContext: fetching profile...");
-                await fetchProfile();
-                console.log("AuthContext: fetchProfile finished");
+
+                if (userData.user) {
+                    console.log("AuthContext: user data provided in login response, setting user state immediately");
+                    setUser(userData.user);
+                } else {
+                    console.log("AuthContext: no user data in response, fetching profile...");
+                    await fetchProfile();
+                }
+                console.log("AuthContext: login sequence finished");
             } else {
                 console.log("AuthContext: no token, setting user directly");
                 setUser(userData);
