@@ -163,12 +163,9 @@ const AuthModal = ({ isOpen, onClose }) => {
                     // Continue anyway if it's just a profile fetch error in mock mode
                 }
 
-                setTimeout(() => {
-                    console.log("Redirecting to /home...");
-                    navigate("/home");
-                    // Delay resetState slightly to ensure navigation starts
-                    setTimeout(() => resetState(), 100);
-                }, 500); // Reduced delay for faster feedback
+                console.log("Redirecting to /home...");
+                navigate("/home");
+                resetState();
             } else if (first_login) {
                 console.log("Verification required (first_login). Moving to OTP view.");
                 setOtpToken(response.data.otp_token);
@@ -274,13 +271,28 @@ const AuthModal = ({ isOpen, onClose }) => {
             }, 2000);
 
         } catch (error) {
+            console.error("Signup error:", error);
+
+            let errorMessage = "Signup failed";
+
+            if (error.response?.data?.detail) {
+                if (Array.isArray(error.response.data.detail)) {
+                    // FastAPI validation errors come as array
+                    errorMessage = error.response.data.detail[0].msg;
+                } else {
+                    errorMessage = error.response.data.detail;
+                }
+            }
+
             setMessage({
                 type: "error",
-                text: error.response?.data?.detail || "Signup failed"
+                text: errorMessage
             });
+
         } finally {
             setLoading(false);
         }
+
     };
 
 
