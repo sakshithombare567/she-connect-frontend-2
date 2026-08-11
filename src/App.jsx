@@ -17,6 +17,8 @@ import WaitingRoom from './pages/WaitingRoom';
 import ConnectedPersonal from './components/ConnectedPersonal';
 import ConnectedAnonymous from "./components/ConnectedAnonymous";
 
+
+
 function App() {
   useEffect(() => {
     // Backend health check removed as it was causing JSON parsing errors

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, GraduationCap, Mail, Phone, Lock, ChevronRight, ChevronLeft, ShieldCheck, Heart, Users, Eye, EyeOff } from 'lucide-react';
+import { User, GraduationCap, Mail, Phone, Lock, ChevronRight, ChevronLeft, ShieldCheck, Heart, Users, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { getColleges } from '../../services/authService';
 
 const Signup = ({
@@ -35,24 +35,34 @@ const Signup = ({
 }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     // College list state
     const [colleges, setColleges] = useState([]);
     const [collegesLoading, setCollegesLoading] = useState(false);
     const [collegesError, setCollegesError] = useState("");
 
-    useEffect(() => {
-        async function fetchColleges() {
-            setCollegesLoading(true);
-            setCollegesError("");
-            try {
-                const res = await getColleges();
+    // ✅ FIX 1: fetchColleges moved outside useEffect so retry button can call it
+    const fetchColleges = async () => {
+        setCollegesLoading(true);
+        setCollegesError("");
+        try {
+            const res = await getColleges();
+            console.log("✅ Colleges API response:", res.data); // DEBUG
+            if (Array.isArray(res.data) && res.data.length > 0) {
                 setColleges(res.data);
-            } catch (e) {
-                setCollegesError("Failed to load colleges");
-            } finally {
-                setCollegesLoading(false);
+            } else {
+                console.warn("⚠️ Colleges array is empty or invalid:", res.data);
+                setCollegesError("No colleges found in database.");
             }
+        } catch (e) {
+            console.error("❌ Colleges fetch error:", e?.response?.data || e?.message || e); // DEBUG
+            setCollegesError("Failed to load colleges. Check if backend is running.");
+        } finally {
+            setCollegesLoading(false);
         }
+    };
+
+    useEffect(() => {
         if (view === 'signup_step1') fetchColleges();
     }, [view]);
 
@@ -94,13 +104,16 @@ const Signup = ({
                 </div>
             </div>
 
-            {/* SIGN UP - STEP 1: PERSONAL DETAILS */}
+            {/* ─────────────────────────────────────────────
+                STEP 1: PERSONAL DETAILS
+            ───────────────────────────────────────────── */}
             {view === 'signup_step1' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <h3 className="text-2xl font-black text-gray-900 text-center mb-1">Join SheConnect</h3>
                     <p className="text-gray-400 text-center text-sm mb-8 font-medium">Step 1: Tell us about yourself</p>
 
                     <form onSubmit={handleSignUpStep1} className="space-y-5">
+                        {/* Full Name */}
                         <div className="group">
                             <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
                             <div className="relative">
@@ -118,27 +131,54 @@ const Signup = ({
                             {fieldErrors.fullName && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.fullName}</p>}
                         </div>
 
+                        {/* College Dropdown */}
                         <div className="group">
                             <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">College</label>
                             <div className="relative">
-                                <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-600 transition-colors" size={18} />
+                                <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-600 transition-colors z-10" size={18} />
                                 <select
                                     required
                                     className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 transition-all font-medium text-gray-900 appearance-none ${fieldErrors.collegeName ? 'focus:ring-red-500 ring-2 ring-red-200' : 'focus:ring-pink-500'}`}
                                     value={collegeName}
-                                    onChange={(e) => setCollegeName(e.target.value)}
+                                    // ✅ FIX 2: Parse to Number — FastAPI expects integer, not string
+                                    onChange={(e) => setCollegeName(e.target.value ? Number(e.target.value) : "")}
                                     onBlur={(e) => validateField("collegeName", e.target.value)}
-                                    disabled={collegesLoading || collegesError}
+                                    // ✅ FIX 3: Only disable while loading, NOT on error
+                                    disabled={collegesLoading}
                                 >
-                                    <option key="default" value="">{collegesLoading ? "Loading..." : collegesError ? collegesError : "Select College"}</option>
-                                    {colleges && colleges.map((col) => (
-                                        <option key={col.college_id} value={col.college_id}>{col.college_name}</option>
+                                    <option value="">
+                                        {collegesLoading ? "Loading colleges..." : "Select College"}
+                                    </option>
+                                    {colleges.map((col) => (
+                                        <option key={col.college_id} value={col.college_id}>
+                                            {col.college_name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
-                            {fieldErrors.collegeName && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.collegeName}</p>}
+
+                            {/* ✅ FIX 4: Show error with retry button instead of disabling */}
+                            {collegesError && (
+                                <div className="flex items-center gap-2 mt-2 px-1">
+                                    <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider flex-1">
+                                        {collegesError}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={fetchColleges}
+                                        className="flex items-center gap-1 text-[10px] text-pink-600 font-black uppercase tracking-wider hover:underline"
+                                    >
+                                        <RefreshCw size={10} /> Retry
+                                    </button>
+                                </div>
+                            )}
+
+                            {fieldErrors.collegeName && (
+                                <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.collegeName}</p>
+                            )}
                         </div>
 
+                        {/* College Email */}
                         <div className="group">
                             <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">College Email</label>
                             <div className="relative">
@@ -156,6 +196,7 @@ const Signup = ({
                             {fieldErrors.email && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase tracking-wider">{fieldErrors.email}</p>}
                         </div>
 
+                        {/* Phone + Gender */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="group">
                                 <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Phone</label>
@@ -181,10 +222,10 @@ const Signup = ({
                                     value={gender}
                                     onChange={(e) => setGender(e.target.value)}
                                 >
-                                    <option key="gender-default" value="">Select</option>
-                                    <option key="gender-female" value="Female">Female</option>
-                                    <option key="gender-male" value="Male">Male</option>
-                                    <option key="gender-other" value="Other">Other</option>
+                                    <option value="">Select</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                         </div>
@@ -207,7 +248,9 @@ const Signup = ({
                 </div>
             )}
 
-            {/* SIGN UP - STEP 2: EMERGENCY CONTACTS */}
+            {/* ─────────────────────────────────────────────
+                STEP 2: EMERGENCY CONTACTS
+            ───────────────────────────────────────────── */}
             {view === 'signup_step2' && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                     <h3 className="text-2xl font-black text-gray-900 text-center mb-1">Safety First</h3>
@@ -253,10 +296,10 @@ const Signup = ({
                                             value={emergency1.gender}
                                             onChange={(e) => setEmergency1({ ...emergency1, gender: e.target.value })}
                                         >
-                                            <option key="e1-gender-default" value="">Gender</option>
-                                            <option key="e1-gender-female" value="Female">Female</option>
-                                            <option key="e1-gender-male" value="Male">Male</option>
-                                            <option key="e1-gender-other" value="Other">Other</option>
+                                            <option value="">Gender</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Other">Other</option>
                                         </select>
                                         {fieldErrors.emergency1_gender && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency1_gender}</p>}
                                     </div>
@@ -303,16 +346,20 @@ const Signup = ({
                                             value={emergency2.gender}
                                             onChange={(e) => setEmergency2({ ...emergency2, gender: e.target.value })}
                                         >
-                                            <option key="e2-gender-default" value="">Gender</option>
-                                            <option key="e2-gender-female" value="Female">Female</option>
-                                            <option key="e2-gender-male" value="Male">Male</option>
-                                            <option key="e2-gender-other" value="Other">Other</option>
+                                            <option value="">Gender</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Other">Other</option>
                                         </select>
                                         {fieldErrors.emergency2_gender && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{fieldErrors.emergency2_gender}</p>}
                                     </div>
                                 </div>
                             </div>
-                            {fieldErrors.contactMatch && <p className="text-center text-[11px] text-red-500 font-black uppercase tracking-widest mt-2 bg-red-50 py-2 rounded-xl border border-red-100 animate-pulse">{fieldErrors.contactMatch}</p>}
+                            {fieldErrors.contactMatch && (
+                                <p className="text-center text-[11px] text-red-500 font-black uppercase tracking-widest mt-2 bg-red-50 py-2 rounded-xl border border-red-100 animate-pulse">
+                                    {fieldErrors.contactMatch}
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex gap-4 pt-4 pb-2">
@@ -330,7 +377,9 @@ const Signup = ({
                 </div>
             )}
 
-            {/* SIGN UP - STEP 3: PASSWORD */}
+            {/* ─────────────────────────────────────────────
+                STEP 3: PASSWORD
+            ───────────────────────────────────────────── */}
             {view === 'signup_step3' && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                     <h3 className="text-2xl font-black text-gray-900 text-center mb-1">Stay Secure</h3>
@@ -389,7 +438,7 @@ const Signup = ({
                             <button type="button" onClick={() => setView('signup_step2')} className="flex-1 py-4 bg-white border border-gray-100 text-gray-400 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
                                 <ChevronLeft size={18} /> Back
                             </button>
-                            <button type="submit" className="flex-[2] py-4 bg-pink-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-pink-100 hover:bg-pink-700 transition-all flex items-center justify-center gap-2 group">
+                            <button type="submit" className="flex-[2] py-4 bg-pink-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-pink-100 hover:bg-pink-700 transition-all flex items-center justify-center gap-2">
                                 <span className="flex items-center gap-2 text-white">
                                     Generate OTP <ChevronRight size={18} />
                                 </span>
@@ -399,14 +448,19 @@ const Signup = ({
                 </div>
             )}
 
-            {/* SIGN UP - STEP 4: VERIFY OTP */}
+            {/* ─────────────────────────────────────────────
+                STEP 4: VERIFY OTP
+            ───────────────────────────────────────────── */}
             {view === 'signup_step4' && (
                 <div className="animate-in fade-in zoom-in-95 duration-500 text-center">
                     <div className="w-20 h-20 bg-green-50 text-green-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner ring-4 ring-green-100/50">
                         <Mail size={32} />
                     </div>
                     <h3 className="text-2xl font-black text-gray-900 mb-1">Verify Email</h3>
-                    <p className="text-gray-400 text-sm mb-8 font-medium">Enter the 6-digit code sent to <br /><span className="text-gray-900 font-bold">{email}</span></p>
+                    <p className="text-gray-400 text-sm mb-8 font-medium">
+                        Enter the 6-digit code sent to <br />
+                        <span className="text-gray-900 font-bold">{email}</span>
+                    </p>
 
                     <form onSubmit={handleSignUpStep4} className="space-y-6">
                         <div className="group">
@@ -421,9 +475,6 @@ const Signup = ({
                                     onChange={(e) => setOtp(e.target.value)}
                                 />
                             </div>
-                            <p className="mt-4 text-[11px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
-                                Tip: Try using <span className="text-green-600">123456</span> for demo
-                            </p>
                         </div>
 
                         <div className="space-y-4 pt-4">

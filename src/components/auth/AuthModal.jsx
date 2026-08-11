@@ -394,11 +394,12 @@ const AuthModal = ({ isOpen, onClose }) => {
         setLoading(true);
         try {
             await resetPassword({
-                email,
-                otp,
-                otp_token: otpToken,
-                new_password: password
-            });
+            email,
+            otp,
+            otp_token: otpToken,
+            new_password: password,
+            confirm_password: confirmPassword
+});
             setMessage({ type: 'success', text: "Password reset successfully! Redirecting to login..." });
             setTimeout(() => {
                 setLoading(false);

@@ -82,15 +82,12 @@ export const signupUser = async (formData) => {
 //  VERIFY SIGNUP OTP  (POST /auth/verify-otp)
 // ─────────────────────────────────────────────────────────
 export const verifySignupOtp = async (email, otp, otpToken) => {
-  if (USE_MOCK) {
-    await delay();
-    return { data: { message: "OTP verified successfully.", success: true } };
-  }
-  return api.post(
-    `/auth/verify-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}&otp_token=${encodeURIComponent(otpToken)}`
-  );
+  return api.post('/auth/verify-otp', {
+    email,
+    otp,
+    otp_token: otpToken,
+  });
 };
-
 // ─────────────────────────────────────────────────────────
 //  FORGOT PASSWORD  (POST /auth/forgot-password)
 // ─────────────────────────────────────────────────────────
@@ -111,30 +108,23 @@ export const forgotPassword = async (email) => {
 //  VERIFY FORGOT-PASSWORD OTP  (POST /auth/verify-forgot-otp)
 // ─────────────────────────────────────────────────────────
 export const verifyForgotOtp = async (email, otp, otpToken) => {
-  if (USE_MOCK) {
-    await delay();
-    return { data: { message: "OTP verified.", success: true } };
-  }
-  return api.post(
-    `/auth/verify-forgot-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}&otp_token=${encodeURIComponent(otpToken)}`
-  );
+  return api.post('/auth/verify-forgot-otp', {
+    email,
+    otp,
+    otp_token: otpToken,
+  });
 };
 
 // ─────────────────────────────────────────────────────────
 //  RESET PASSWORD  (POST /auth/reset-password)
 // ─────────────────────────────────────────────────────────
 export const resetPassword = async (formData) => {
-  if (USE_MOCK) {
-    await delay();
-    return { data: mockPasswordChangeResponse };
-  }
-  return api.post("/auth/reset-password", null, {
-    params: {
-      email: formData.email,
-      otp: formData.otp,
-      otp_token: formData.otp_token,
-      new_password: formData.new_password,
-    },
+  return api.post('/auth/reset-password', {
+    email: formData.email,
+    otp: formData.otp,
+    otp_token: formData.otp_token,
+    new_password: formData.new_password,
+    confirm_password: formData.confirm_password,
   });
 };
 
@@ -146,25 +136,34 @@ export const resendOtp = async (email, purpose) => {
     await delay();
     return { data: { message: `OTP resent to ${email}`, success: true } };
   }
-  return api.post(
-    `/auth/resend-otp?email=${encodeURIComponent(email)}&purpose=${encodeURIComponent(purpose)}`
-  );
-};
 
+  return api.post('/auth/resend-otp', {
+    email,
+    purpose,
+  });
+};
 // ─────────────────────────────────────────────────────────
 //  GET PROFILE  (GET /auth/me)
+// ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+//  GET PROFILE  (GET /auth/home)
 // ─────────────────────────────────────────────────────────
 export const getProfile = async () => {
   if (USE_MOCK) {
     await delay(400);
+
     const savedUser = localStorage.getItem('mock_registered_user');
+
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       return { data: { ...mockUser, ...parsedUser } };
     }
+
     return { data: mockUser };
   }
-  return api.get("/home/");
+
+  
+  return api.get("/auth/home");
 };
 
 // ─────────────────────────────────────────────────────────
