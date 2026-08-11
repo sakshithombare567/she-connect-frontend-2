@@ -2,9 +2,7 @@ import api from "../api/axios";
 import {
   mockLoginResponse,
   mockUser,
-  mockSignupResponse,
   mockColleges,
-  mockPasswordChangeResponse,
 } from "../data/mockData";
 
 // ─────────────────────────────────────────────────────────

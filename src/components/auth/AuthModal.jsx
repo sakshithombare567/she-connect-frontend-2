@@ -88,12 +88,16 @@ const AuthModal = ({ isOpen, onClose }) => {
             case "emergency2_phone":
                 if (!validatePhone(value)) error = "Must be 10 digits (starting 6-9)";
                 break;
-            case "password":
-                const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*\d).{8,10}$/;
-                if (!passwordRegex.test(value)) {
-                    error = "8-10 chars, 1 uppercase, 1 special, 1 number";
-                }
-                break;
+            case 'password': {
+  const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?':{}|<>])(?=.*\d).{8,10}$/;
+
+  if (!passwordRegex.test(value)) {
+    error = '8-10 chars, 1 uppercase, 1 special, 1 number';
+  }
+
+  break;
+}
             case "confirmPassword":
                 if (value !== password) error = "Passwords do not match";
                 break;
