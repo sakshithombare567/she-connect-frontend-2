@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { MapPin, ArrowLeft, X } from 'lucide-react';
-import { mockPotentialMatches } from '../../data/mockData';
 
-const MatchMakingModal = ({ isOpen, onClose, tripDetails, privacyChoice, onConnect }) => {
+const MatchMakingModal = ({ isOpen, onClose, tripDetails, onConnect, matches = [] }) => {
     // Potential Matches
-    const [potentialMatches] = useState(mockPotentialMatches);
+    const [potentialMatches] = useState(matches);
     const [sentRequestIds, setSentRequestIds] = useState([]);
 
     const handleConnectClick = (user) => {

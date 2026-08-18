@@ -105,6 +105,7 @@ const LocationInput = ({ label, value, onChange, placeholder }) => {
 export default LocationInput; */
 import React, { useState, useEffect, useRef } from "react";
 import { MapPin, Loader2, Search } from "lucide-react";
+import { autocomplete } from "../services/geoService";
 
 const LocationInput = ({ label, value, onChange, placeholder, error }) => {
     const [suggestions, setSuggestions] = useState([]);
@@ -122,8 +123,8 @@ const LocationInput = ({ label, value, onChange, placeholder, error }) => {
     }, []);
 
     const saveToHistory = (item) => {
-        const name = item.address.city || item.address.town || item.address.suburb || item.address.village || item.name;
-        const coords = [parseFloat(item.lat), parseFloat(item.lon)];
+        const name = item.label || item.name || item.address?.city || item.address?.town || item.address?.suburb || item.address?.village;
+        const coords = [parseFloat(item.lat), parseFloat(item.lng || item.lon)];
 
         const newHistoryItem = { name, coords, id: item.place_id };
 
@@ -153,13 +154,8 @@ const LocationInput = ({ label, value, onChange, placeholder, error }) => {
 
             setLoading(true);
             try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-                    value
-                )}&countrycodes=in&addressdetails=1&limit=6&featuretype=settlement&namedetails=1`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-                setSuggestions(data);
+                const data = await autocomplete(value);
+                setSuggestions(data.results || []);
             } catch (error) {
                 console.error("Autocomplete Error:", error);
             } finally {
@@ -177,8 +173,8 @@ const LocationInput = ({ label, value, onChange, placeholder, error }) => {
     }, [value, showSuggestions]);
 
     const handleSelect = (item) => {
-        const name = item.name || item.address.city || item.address.town || item.address.suburb || item.address.village;
-        const coords = item.coords || [parseFloat(item.lat), parseFloat(item.lon)];
+        const name = item.label || item.name || item.address?.city || item.address?.town;
+        const coords = item.coords || [item.lat, item.lng];
 
         if (!item.coords) {
             saveToHistory(item);
@@ -230,8 +226,8 @@ const LocationInput = ({ label, value, onChange, placeholder, error }) => {
                     <ul className="max-h-64 overflow-y-auto py-1.5">
                         {(value.length === 0 ? history : suggestions).map((item) => (
                             <li
-                                key={item.place_id || item.id}
-                                onClick={() => handleSelect(item)}
+                                key={item.place_id || item.id || Math.random().toString()}
+                                onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
                                 className="px-4 py-3 hover:bg-pink-50 cursor-pointer flex items-start gap-3 transition-colors border-b border-gray-50 last:border-0"
                             >
                                 <div className="mt-0.5 bg-gray-100 p-1.5 rounded-lg text-gray-500 group-hover:bg-pink-100 group-hover:text-pink-600 transition-colors">
@@ -239,10 +235,10 @@ const LocationInput = ({ label, value, onChange, placeholder, error }) => {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-semibold text-gray-800">
-                                        {item.name || item.address.city || item.address.town || item.address.suburb || item.address.village}
+                                        {item.label || item.name || item.address?.city || item.address?.town}
                                     </span>
                                     {item.display_name && (
-                                        <span className="text-xs text-gray-500 truncate max-w-[220px]">
+                                        <span className="text-xs text-gray-500 truncate max-w-[220px]" >
                                             {item.display_name}
                                         </span>
                                     )}

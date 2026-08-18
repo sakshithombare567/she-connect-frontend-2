@@ -54,10 +54,8 @@ const StartTrip = () => {
                     const cleanValue = value.replace(/\s+/g, '').toUpperCase();
                     switch (transportMode) {
                         case 'car':
-                        case 'uber':
-                        case 'ola':
-                        case 'auto':
-                        case 'cab':
+                        case 'uber/cab':
+                        case 'auto-rickshaw':
                             const rtoRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/;
                             if (!rtoRegex.test(cleanValue)) {
                                 error = "Use format: MH 12 AB 1234 (10 chars)";
@@ -92,10 +90,8 @@ const StartTrip = () => {
     const getPlaceholder = () => {
         switch (transportMode) {
             case 'car':
-            case 'uber':
-            case 'ola':
-            case 'auto':
-            case 'cab':
+            case 'uber/cab':
+            case 'auto-rickshaw':
                 return "e.g. MH 12 AB 1234 (optional)";
             case 'train':
                 return "e.g. 12123 or Deccan Queen (optional)";
@@ -150,11 +146,14 @@ const StartTrip = () => {
         return () => clearTimeout(timer);
     }, [endLocation]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         if (hasActiveTrip) return;
         if (validateForm()) {
-            // No privacy modal at creation — privacy is chosen when sending/accepting requests
+            if (!startCoords || !endCoords) {
+                alert("Please wait for coordinates to be fetched from the location inputs.");
+                return;
+            }
             const sid = getSessionId();
             const tabSuffix = sid.slice(-4).toUpperCase();
             const userDetails = {
@@ -162,10 +161,12 @@ const StartTrip = () => {
                 phone: user?.phone || user?.contact || null,
                 college: user?.college || null,
             };
-            const success = createTrip(
+            const success = await createTrip(
                 {
                     start: startLocation,
+                    startCoords: startCoords,
                     end: endLocation,
+                    endCoords: endCoords,
                     mode: transportMode,
                     vehicleNo: transportNo || null,
                 },
@@ -324,10 +325,9 @@ const StartTrip = () => {
                                                 <option value="car">Car Pool</option>
                                                 <option value="bus">Public Bus</option>
                                                 <option value="train">Railway</option>
-                                                <option value="uber">Uber / Ola</option>
-                                                <option value="auto">Auto Rickshaw</option>
+                                                <option value="uber/cab">Uber / Ola / Cab</option>
+                                                <option value="auto-rickshaw">Auto Rickshaw</option>
                                                 <option value="metro">Metro Rail</option>
-                                                <option value="cab">Cab</option>
                                             </select>
                                             <Truck className="absolute right-4 top-4 text-gray-400 group-focus-within:text-pink-600 transition-colors" size={20} />
                                         </div>

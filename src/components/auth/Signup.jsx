@@ -96,7 +96,7 @@ const Signup = ({
                     ))}
                 </div>
                 {/* Connector Line */}
-                <div className="absolute top-5 left-8 right-8 h-[2px] bg-gray-100 -z-0">
+                <div className="absolute top-5 left-8 right-8 h-[2px] bg-gray-100-z-0">
                     <div
                         className="h-full bg-pink-600 transition-all duration-500"
                         style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}

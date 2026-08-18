@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getProfile } from '../services/authService';
-import { mockUser } from '../data/mockData';
+// import { mockUser } from '../data/mockData';
 
 const AuthContext = createContext(null);
 
@@ -8,18 +8,6 @@ export const AuthProvider = ({ children }) => {
     // Using mock user — switch to null + fetchProfile() when backend is ready
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     const fetchProfile = async () => {
@@ -51,6 +39,9 @@ export const AuthProvider = ({ children }) => {
             if (userData.access_token) {
                 console.log("AuthContext: token found, saving to sessionStorage");
                 sessionStorage.setItem('token', userData.access_token);
+                if (userData.refresh_token) {
+                    sessionStorage.setItem('refresh_token', userData.refresh_token);
+                }
 
                 if (userData.user) {
                     console.log("AuthContext: user data provided in login response, setting user state immediately");
@@ -72,6 +63,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         sessionStorage.removeItem('token');
+        sessionStorage.removeItem('refresh_token');
         setUser(null);
     };
 

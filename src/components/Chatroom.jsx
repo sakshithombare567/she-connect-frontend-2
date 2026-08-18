@@ -10,7 +10,7 @@ const Chatroom = ({ partner, onClose }) => {
     const {
         messages,
         isTyping,
-        partnerLocation, // Available if needed elsewhere in UI
+        // Available if needed elsewhere in UI
         isConnected,
         sendMessage,
         sendTyping,
