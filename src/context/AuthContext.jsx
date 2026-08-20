@@ -10,6 +10,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
 
+
+
     const fetchProfile = async () => {
         try {
             const response = await getProfile();
@@ -63,7 +65,6 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         sessionStorage.removeItem('token');
-        sessionStorage.removeItem('refresh_token');
         setUser(null);
     };
 

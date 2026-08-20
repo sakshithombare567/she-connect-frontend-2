@@ -33,8 +33,10 @@ const Requests = () => {
         matches,
         acceptRequest,
         declineRequest,
+        cancelRequest,
         connectedPartner,
         privacyChoice,
+        setPrivacyChoice,
     } = useTrip();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -48,9 +50,10 @@ const Requests = () => {
         setShowPrivacyModal(true);
     };
 
-    const handlePrivacyConfirm = (privacyChoice) => {
+    const handlePrivacyConfirm = (selectedPrivacyChoice) => {
         if (!selectedRequest) return;
-        acceptRequest(selectedRequest.id);
+        setPrivacyChoice(selectedPrivacyChoice);
+        acceptRequest(selectedRequest.id, selectedPrivacyChoice);
         setShowPrivacyModal(false);
         setSelectedRequest(null);
         // Navigate after a small delay for the state to update
@@ -66,11 +69,13 @@ const Requests = () => {
     // Filter only pending received requests
     const pendingReceived = receivedRequests.filter(r => r.status === 'pending' || r.status === REQUEST_STATUS.PENDING);
 
-    // Build sent requests display from context
-    const sentDisplay = sentRequests.map(sr => {
-        const matchData = matches.find(m => m.id === sr.matchId) || {};
-        return { ...sr, ...matchData };
-    });
+    // Build sent requests display from context (only pending or accepted, excluded cancelled/rejected)
+    const sentDisplay = sentRequests
+        .filter(sr => sr.status === 'PENDING' || sr.status === 'ACCEPTED' || sr.status === REQUEST_STATUS?.PENDING || sr.status === REQUEST_STATUS?.ACCEPTED)
+        .map(sr => {
+            const matchData = matches.find(m => m.id === sr.matchId) || {};
+            return { ...sr, ...matchData };
+        });
 
     if (loading) {
         return (
@@ -304,15 +309,23 @@ const Requests = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${sr.status === REQUEST_STATUS.PENDING ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                                                    sr.status === REQUEST_STATUS.ACCEPTED ? 'bg-green-50 text-green-600 border border-green-200' :
-                                                        sr.status === REQUEST_STATUS.DECLINED ? 'bg-rose-50 text-rose-600 border border-rose-200' :
+                                            <div className="flex items-center gap-3">
+                                                <div className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${sr.status === 'PENDING' || sr.status === REQUEST_STATUS?.PENDING ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                                        sr.status === 'ACCEPTED' || sr.status === REQUEST_STATUS?.ACCEPTED ? 'bg-green-50 text-green-600 border border-green-200' :
                                                             'bg-gray-50 text-gray-500 border border-gray-200'
-                                                }`}>
-                                                {sr.status === REQUEST_STATUS.PENDING && <><Clock size={12} className="inline mr-1" />Pending</>}
-                                                {sr.status === REQUEST_STATUS.ACCEPTED && <><CheckCircle2 size={12} className="inline mr-1" />Accepted</>}
-                                                {sr.status === REQUEST_STATUS.DECLINED && <><XCircle size={12} className="inline mr-1" />Declined</>}
-                                                {sr.status === REQUEST_STATUS.EXPIRED && 'Expired'}
+                                                    }`}>
+                                                    {(sr.status === 'PENDING' || sr.status === REQUEST_STATUS?.PENDING) && <><Clock size={12} className="inline mr-1" />Pending</>}
+                                                    {(sr.status === 'ACCEPTED' || sr.status === REQUEST_STATUS?.ACCEPTED) && <><CheckCircle2 size={12} className="inline mr-1" />Accepted</>}
+                                                </div>
+                                                {(sr.status === 'PENDING' || sr.status === REQUEST_STATUS?.PENDING) && (
+                                                    <button
+                                                        onClick={() => cancelRequest(sr.id || sr.matchId)}
+                                                        className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest bg-gray-100 text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center gap-1"
+                                                        title="Cancel this request"
+                                                    >
+                                                        <CloseIcon size={14} /> Cancel
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))

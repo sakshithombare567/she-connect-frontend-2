@@ -17,6 +17,7 @@ const StartTrip = () => {
         tripStatus,
         activeTrip,
         createTrip,
+        endTrip,
         hasActiveTrip,
     } = useTrip();
 
@@ -150,8 +151,24 @@ const StartTrip = () => {
         if (e) e.preventDefault();
         if (hasActiveTrip) return;
         if (validateForm()) {
-            if (!startCoords || !endCoords) {
-                alert("Please wait for coordinates to be fetched from the location inputs.");
+            let sCoords = startCoords;
+            let eCoords = endCoords;
+
+            if (!sCoords || !eCoords) {
+                setLoadingCoords(true);
+                if (!sCoords && startLocation) {
+                    sCoords = await getCoordsFromLocation(startLocation);
+                    if (sCoords) setStartCoords(sCoords);
+                }
+                if (!eCoords && endLocation) {
+                    eCoords = await getCoordsFromLocation(endLocation);
+                    if (eCoords) setEndCoords(eCoords);
+                }
+                setLoadingCoords(false);
+            }
+
+            if (!sCoords || !eCoords) {
+                alert("Please select a valid starting point and destination.");
                 return;
             }
             const sid = getSessionId();
@@ -164,9 +181,9 @@ const StartTrip = () => {
             const success = await createTrip(
                 {
                     start: startLocation,
-                    startCoords: startCoords,
+                    startCoords: sCoords,
                     end: endLocation,
-                    endCoords: endCoords,
+                    endCoords: eCoords,
                     mode: transportMode,
                     vehicleNo: transportNo || null,
                 },
@@ -210,16 +227,26 @@ const StartTrip = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        if (tripStatus === TRIP_STATUS.CONNECTED) navigate('/live-connection');
-                                        else navigate('/waiting-room');
-                                    }}
-                                    className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-2"
-                                >
-                                    {tripStatus === TRIP_STATUS.CONNECTED ? 'View Connection' : 'Go to Waiting Room'}
-                                    <ArrowRight size={16} />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => endTrip()}
+                                        className="px-4 py-3 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 font-black text-xs uppercase tracking-widest transition-all"
+                                    >
+                                        Cancel Trip
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (tripStatus === TRIP_STATUS.CONNECTED) navigate('/live-connection');
+                                            else navigate('/waiting-room');
+                                        }}
+                                        className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-2"
+                                    >
+                                        {tripStatus === TRIP_STATUS.CONNECTED ? 'View Connection' : 'Go to Waiting Room'}
+                                        <ArrowRight size={16} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

@@ -37,12 +37,14 @@ const WaitingRoom = () => {
         receivedRequests,
         connectedPartner,
         sendRequest,
+        cancelRequest,
         acceptRequest,
         declineRequest,
         retryMatching,
         endTrip,
         emergencyAction,
         timeoutLimitMs,
+        setPrivacyChoice,
     } = useTrip();
 
     const [elapsed, setElapsed] = useState(0);
@@ -78,7 +80,7 @@ const WaitingRoom = () => {
     }, [tripStatus, activeTrip]);
 
     const isRequestSent = (matchId) =>
-        sentRequests.some(r => r.matchId === matchId);
+        sentRequests.some(r => r.matchId === matchId.toString() && (r.status === 'PENDING' || r.status === 'pending'));
 
     const getRequestStatus = (matchId) => {
         const req = sentRequests.find(r => r.matchId === matchId);
@@ -107,6 +109,7 @@ const WaitingRoom = () => {
         setShowPrivacyModal(false);
         if (!pendingAction) return;
 
+        setPrivacyChoice(choice);
         if (pendingAction.type === 'send') {
             sendRequest(pendingAction.id, choice);
         } else if (pendingAction.type === 'accept') {
@@ -342,19 +345,27 @@ const WaitingRoom = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => handleSendClick(user.id)}
-                                            disabled={isRequestSent(user.id)}
-                                            className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 ${isRequestSent(user.id)
-                                                ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
-                                                : 'bg-gray-900 text-white hover:shadow-lg bg-gradient-to-r hover:from-pink-600 hover:to-rose-600'
-                                                }`}
-                                        >
-                                            {isRequestSent(user.id)
-                                                ? <><Send size={14} /> Sent ✓</>
-                                                : <><Send size={14} /> Send Request</>
-                                            }
-                                        </button>
+                                        {isRequestSent(user.id) ? (
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest bg-green-50 text-green-700 border border-green-200 flex items-center gap-1.5">
+                                                    <Send size={14} /> Sent ✓
+                                                </span>
+                                                <button
+                                                    onClick={() => cancelRequest(user.id)}
+                                                    className="px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest bg-gray-100 text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center gap-1"
+                                                    title="Cancel this request"
+                                                >
+                                                    <X size={14} /> Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleSendClick(user.id)}
+                                                className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shrink-0 bg-gray-900 text-white hover:shadow-lg bg-gradient-to-r hover:from-pink-600 hover:to-rose-600"
+                                            >
+                                                <Send size={14} /> Send Request
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}

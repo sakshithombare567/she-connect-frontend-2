@@ -31,10 +31,11 @@ export const getTripMatches = async (tripId) => {
 };
 
 // Send a trip request to another user
-export const sendTripRequest = async (senderTripId, receiverTripId) => {
+export const sendTripRequest = async (senderTripId, receiverTripId, privacyMode = "ANONYMOUS") => {
     const response = await api.post('/travel/request', {
         sender_trip_id: senderTripId,
-        receiver_trip_id: receiverTripId
+        receiver_trip_id: receiverTripId,
+        privacy_mode: privacyMode
     });
     return response.data;
 };
@@ -46,8 +47,14 @@ export const getMyRequests = async () => {
 };
 
 // Respond to a trip request (accepted/rejected)
-export const respondToRequest = async (requestId, status) => {
-    const response = await api.put(`/travel/request/${requestId}`, { status });
+export const respondToRequest = async (requestId, status, privacyMode = "ANONYMOUS") => {
+    const response = await api.put(`/travel/request/${requestId}`, { status, privacy_mode: privacyMode });
+    return response.data;
+};
+
+// Cancel a trip request
+export const cancelTripRequest = async (requestId) => {
+    const response = await api.put(`/travel/request/${requestId}`, { status: 'cancelled' });
     return response.data;
 };
 
